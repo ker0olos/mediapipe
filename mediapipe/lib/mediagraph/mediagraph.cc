@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// An example of sending OpenCV webcam frames into a MediaPipe graph.
 #include <cstdlib>
 #include <string>
 

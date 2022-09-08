@@ -28,7 +28,7 @@ cc_binary(
 cc_library(
     name = "mediagraph_",
     srcs = [ "mediagraph.cc" ],
-    # hdrs = ["mediagraph.h"],
+    hdrs = [ "mediagraph.h" ],
     alwayslink = 1,
     visibility = ["//visibility:public"],
     # deps = [
