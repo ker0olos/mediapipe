@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     git \
     wget \
+    cmake \
     unzip \
     python3-dev \
     python3-opencv \
@@ -36,8 +37,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libopencv-features2d-dev \
     software-properties-common && \
     add-apt-repository -y ppa:openjdk-r/ppa && \
-    add-apt-repository -y ppa:george-edison55/cmake-3.x && \
-    apt-get update && apt-get install -y openjdk-8-jdk cmake && \
+    apt-get update && apt-get install -y openjdk-8-jdk && \
     apt-get install -y mesa-common-dev libegl1-mesa-dev libgles2-mesa-dev && \
     apt-get install -y mesa-utils && \
     apt-get clean && \
