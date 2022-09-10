@@ -31,5 +31,3 @@ jobs:
           context: .
           file: "{context}/Dockerfile.lib"
           tags: ghcr.io/${{ github.actor }}/${{ github.repository }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
