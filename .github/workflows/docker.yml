@@ -31,3 +31,5 @@ jobs:
           context: .
           file: "./Dockerfile.lib"
           tags: ghcr.io/${{ github.repository }}:latest
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max

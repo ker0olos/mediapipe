@@ -72,5 +72,11 @@ RUN sh setup_opencv.sh
 
 RUN bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
 
+# Publish a smaller image without all the build dependencies
+
 FROM alpine:latest
-COPY --from=builder /mediapipe .
+
+COPY --from=builder /mediapipe/mediapipe /mediapipe
+COPY --from=builder /mediapipe/bazel-out /bazel-out
+COPY --from=builder /mediapipe/bazel-bin /bazel-bin
+COPY --from=builder /mediapipe/entrypoint.sh /entrypoint.sh
