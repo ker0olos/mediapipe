@@ -1,10 +1,6 @@
 name: Docker Image
 
-on:
-  push:
-    branches:
-      - 'master'
-      - 'action'
+on: workflow_dispatch
 
 jobs:
   build-and-push-image:

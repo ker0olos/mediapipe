@@ -1,3 +1,3 @@
 FROM ghcr.io/ker0olos/mediapipe:latest
 
-ENTRYPOINT ["sh", "entrypoint.sh"]
+ENTRYPOINT ["sh", "/entrypoint.sh"]
