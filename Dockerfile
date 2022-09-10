@@ -36,7 +36,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libopencv-features2d-dev \
     software-properties-common && \
     add-apt-repository -y ppa:openjdk-r/ppa && \
-    apt-get update && apt-get install -y openjdk-8-jdk && \
+    add-apt-repository -y ppa:george-edison55/cmake-3.x && \
+    apt-get update && apt-get install -y openjdk-8-jdk cmake && \
     apt-get install -y mesa-common-dev libegl1-mesa-dev libgles2-mesa-dev && \
     apt-get install -y mesa-utils && \
     apt-get clean && \
@@ -65,7 +66,7 @@ RUN mkdir /bazel && \
 
 COPY . /mediapipe/
 
-RUN cd /mediapipe && sh setup_opencv.sh
+RUN cd /mediapipe && setup_opencv.sh
 
 RUN cd /mediapipe && bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
 
