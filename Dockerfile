@@ -63,7 +63,7 @@ RUN mkdir /bazel && \
     /bazel/installer.sh  && \
     rm -f /bazel/installer.sh
 
-RUN cd /mediapipe && bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
+RUN bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
 
 COPY . /mediapipe/
 
