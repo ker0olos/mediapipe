@@ -15,10 +15,10 @@ sudo cp bazel-bin/mediapipe/lib/mediagraph/libmediagraph.so /usr/lib/libmediagra
 ```yml
 # add this and it will automatically
 # install libmediagraph.so and the mediagraph.h
-# so you can just use them without manual labor 
 - uses: ker0olos/mediapipe@master
+- run: sudo cp mediagraph.h /usr/include/mediagraph.h
+- run: sudo cp libmediagraph.so /usr/lib/x86_64-linux-gnu/libmediagraph.so
 ```
-
 
 ### Credits
 
