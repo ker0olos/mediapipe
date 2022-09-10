@@ -65,7 +65,7 @@ COPY . /mediapipe/
 
 COPY entrypoint.sh /entrypoint.sh
 
-RUN cd /mediapipe && bazel build --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
+RUN cd /mediapipe && bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
 
 USER root
 
