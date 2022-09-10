@@ -64,7 +64,9 @@ RUN mkdir /bazel && \
     /bazel/installer.sh && \
     rm -f /bazel/installer.sh
 
+COPY WORKSPACE /mediapipe/WORKSPACE
 COPY setup_opencv.sh /mediapipe/setup_opencv.sh
+COPY third_party/opencv_linux.BUILD /mediapipe/third_party/opencv_linux.BUILD
 
 RUN sh setup_opencv.sh
 
