@@ -30,4 +30,3 @@ jobs:
           context: .
           file: "./Dockerfile.lib"
           tags: ghcr.io/${{ github.actor }}/${{ github.repository }}:latest
-          # tags: ghcr.io/${{ github.repository }}:latest

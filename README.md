@@ -10,7 +10,14 @@ bazel build --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
 sudo cp bazel-bin/mediapipe/lib/mediagraph/libmediagraph.so /usr/lib/libmediagraph.so && sudo cp mediapipe/lib/mediagraph/mediagraph.h /usr/include/mediagraph.h
 ```
 
-outputs: ```bazel-bin/mediapipe/lib/mediagraph/libmediagraph.so```, header is located at: ```mediapipe/lib/mediagraph/mediagraph.h```
+### Github Actions
+
+```yml
+# add this and it will automatically
+# install libmediagraph.so and the mediagraph.h
+# so you can just use them without manual labor 
+- uses: ker0olos/mediapipe@master
+```
 
 
 ### Credits
