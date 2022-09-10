@@ -68,6 +68,6 @@ RUN chmod +x ./setup_opencv.sh && ./setup_opencv.sh
 
 RUN bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
 
-COPY ${GITHUB_WORKSPACE} /mediapipe/
+COPY . /mediapipe/
 
 ENTRYPOINT ["/mediapipe/entrypoint.sh"]
