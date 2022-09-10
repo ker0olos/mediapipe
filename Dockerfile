@@ -43,6 +43,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/*
 
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 --slave /usr/bin/g++ g++ /usr/bin/g++-8
+
 RUN pip3 install --upgrade setuptools
 RUN pip3 install wheel
 RUN pip3 install future
@@ -53,8 +54,8 @@ RUN pip3 install tf_slim
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
-# Install bazel
 ARG BAZEL_VERSION=5.2.0
+
 RUN mkdir /bazel && \
     wget --no-check-certificate -O /bazel/installer.sh "https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh" && \
     wget --no-check-certificate -O  /bazel/LICENSE.txt "https://raw.githubusercontent.com/bazelbuild/bazel/master/LICENSE" && \
@@ -62,18 +63,8 @@ RUN mkdir /bazel && \
     /bazel/installer.sh  && \
     rm -f /bazel/installer.sh
 
-COPY . /mediapipe/
-
-COPY entrypoint.sh /entrypoint.sh
-
 RUN cd /mediapipe && bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
 
-USER root
+COPY . /mediapipe/
 
-COPY /mediapipe/bazel-bin/mediapipe/lib/mediagraph/libmediagraph /usr/lib/libmediagraph.so
-COPY /mediapipe/mediapipe/lib/mediagraph/mediagraph.h /usr/include/mediagraph.h
-
-COPY /mediapipe/bazel-bin/mediapipe/lib/mediagraph/libmediagraph /usr/lib/x86_64-linux-gnu/libmediagraph.so
-COPY /mediapipe/mediapipe/lib/mediagraph/mediagraph.h /usr/include/x86_64-linux-gnu/mediagraph.h
-
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/mediapipe/entrypoint.sh"]
