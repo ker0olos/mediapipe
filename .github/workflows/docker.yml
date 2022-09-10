@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - 'master'
-      - 'action'
 
 jobs:
   build-and-push-image:
@@ -31,3 +30,4 @@ jobs:
           context: .
           file: "./Dockerfile.lib"
           tags: ghcr.io/${{ github.actor }}/${{ github.repository }}:latest
+          # tags: ghcr.io/${{ github.repository }}:latest
