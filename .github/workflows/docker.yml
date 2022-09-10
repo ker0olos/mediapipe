@@ -29,5 +29,5 @@ jobs:
         with:
           push: true
           context: .
-          file: "{context}/Dockerfile.lib"
+          file: "./Dockerfile.lib"
           tags: ghcr.io/${{ github.actor }}/${{ github.repository }}:latest
