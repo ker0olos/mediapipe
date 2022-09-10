@@ -1,22 +1,16 @@
-# WORKSPACE
-new_local_repository(
-  name = "linux_opencv",
-  build_file = "@//third_party:opencv_linux.BUILD",
-  path = "/usr",
-)
+licenses(["notice"])  # BSD license
 
-# opencv_linux.BUILD for OpenCV 4 installed from Debian package
+exports_files(["LICENSE"])
+
 cc_library(
   name = "opencv",
   hdrs = glob([
-    # Uncomment according to your multiarch value (gcc -print-multiarch):
     #  "include/aarch64-linux-gnu/opencv4/opencv2/cvconfig.h",
     #  "include/arm-linux-gnueabihf/opencv4/opencv2/cvconfig.h",
     "include/x86_64-linux-gnu/opencv4/opencv2/cvconfig.h",
     "include/opencv4/opencv2/**/*.h*",
   ]),
   includes = [
-    # Uncomment according to your multiarch value (gcc -print-multiarch):
     #  "include/aarch64-linux-gnu/opencv4/",
     #  "include/arm-linux-gnueabihf/opencv4/",
     "include/x86_64-linux-gnu/opencv4/",
