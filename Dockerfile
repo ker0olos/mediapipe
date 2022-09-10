@@ -15,7 +15,7 @@ FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get -qq update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc-8 g++-8 \
     ca-certificates \
@@ -35,11 +35,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libopencv-video-dev \
     libopencv-calib3d-dev \
     libopencv-features2d-dev \
-    software-properties-common && \
-    add-apt-repository -y ppa:openjdk-r/ppa && \
-    apt-get update && apt-get install -y openjdk-8-jdk && \
-    apt-get install -y mesa-common-dev libegl1-mesa-dev libgles2-mesa-dev && \
-    apt-get install -y mesa-utils && \
+    software-properties-common > /dev/null && \
+    add-apt-repository -y ppa:openjdk-r/ppa > /dev/null && \
+    apt-get update && apt-get install -y openjdk-8-jdk > /dev/null && \
+    apt-get install -y mesa-common-dev libegl1-mesa-dev libgles2-mesa-dev > /dev/null && \
+    apt-get install -y mesa-utils > /dev/null && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -66,7 +66,7 @@ RUN mkdir /bazel && \
 
 COPY . /mediapipe/
 
-RUN cd /mediapipe && setup_opencv.sh
+RUN cd /mediapipe && ./setup_opencv.sh
 
 RUN cd /mediapipe && bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
 
