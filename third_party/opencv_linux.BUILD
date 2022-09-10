@@ -17,14 +17,14 @@ cc_library(
         # For OpenCV 4.x
         #"include/aarch64-linux-gnu/opencv4/opencv2/cvconfig.h",
         #"include/arm-linux-gnueabihf/opencv4/opencv2/cvconfig.h",
-        #"include/x86_64-linux-gnu/opencv4/opencv2/cvconfig.h",
+        "include/x86_64-linux-gnu/opencv4/opencv2/cvconfig.h",
         "include/opencv4/opencv2/**/*.h*",
     ]),
     includes = [
         # For OpenCV 4.x
         #"include/aarch64-linux-gnu/opencv4/",
         #"include/arm-linux-gnueabihf/opencv4/",
-        #"include/x86_64-linux-gnu/opencv4/",
+        "include/x86_64-linux-gnu/opencv4/",
         "include/opencv4/",
     ],
     linkopts = [
