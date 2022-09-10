@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM ubuntu:20.04
+FROM ubuntu:20.04 AS builder
+
+WORKDIR /mediapipe
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -64,13 +66,11 @@ RUN mkdir /bazel && \
     /bazel/installer.sh && \
     rm -f /bazel/installer.sh
 
-COPY . /mediapipe/
+COPY . /mediapipe
 
-RUN sh /mediapipe/setup_opencv.sh
+RUN sh setup_opencv.sh
 
-RUN cd /mediapipe && bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
+RUN bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
 
-RUN cp /mediapipe/mediapipe/lib/mediagraph/mediagraph.h /mediapipe/mediagraph.h
-RUN cp /mediapipe/bazel-bin/mediapipe/lib/mediagraph/libmediagraph.so /mediapipe/libmediagraph.so
-
-ENTRYPOINT ["/mediapipe/entrypoint.sh"]
+FROM alpine:latest
+COPY --from=builder /mediapipe .
