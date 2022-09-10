@@ -64,10 +64,13 @@ RUN mkdir /bazel && \
     /bazel/installer.sh && \
     rm -f /bazel/installer.sh
 
-RUN chmod +x ./setup_opencv.sh && ./setup_opencv.sh
-
-RUN bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
-
 COPY . /mediapipe/
+
+RUN sh /mediapipe/setup_opencv.sh
+
+RUN cd /mediapipe && bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
+
+COPY /mediapipe/mediapipe/lib/mediagraph/mediagraph.h /mediapipe/mediagraph.h
+COPY /mediapipe/bazel-bin/mediapipe/lib/mediagraph/libmediagraph.so /mediapipe/libmediagraph.so
 
 ENTRYPOINT ["/mediapipe/entrypoint.sh"]
