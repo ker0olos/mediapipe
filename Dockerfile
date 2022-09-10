@@ -66,7 +66,7 @@ RUN mkdir /bazel && \
 
 COPY . /mediapipe/
 
-RUN cd /mediapipe && chmod +x ./mediapipe.sh && ./setup_opencv.sh
+RUN cd /mediapipe && chmod +x ./setup_opencv.sh && ./setup_opencv.sh
 
 RUN cd /mediapipe && bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
 
