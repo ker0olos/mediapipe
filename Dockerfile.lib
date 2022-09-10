@@ -15,8 +15,6 @@ FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-WORKDIR /mediapipe
-
 RUN apt-get -qq update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc-8 g++-8 \
@@ -65,8 +63,6 @@ RUN mkdir /bazel && \
     chmod +x /bazel/installer.sh && \
     /bazel/installer.sh && \
     rm -f /bazel/installer.sh
-
-COPY . /mediapipe/
 
 RUN chmod +x ./setup_opencv.sh && ./setup_opencv.sh
 
