@@ -37,7 +37,7 @@ RUN apt-get -qq update && apt-get install -y --no-install-recommends \
     libopencv-features2d-dev \
     software-properties-common > /dev/null && \
     add-apt-repository -y ppa:openjdk-r/ppa > /dev/null && \
-    apt-get update && apt-get install -y openjdk-8-jdk > /dev/null && \
+    apt-get -qq update && apt-get install -y openjdk-8-jdk > /dev/null && \
     apt-get install -y mesa-common-dev libegl1-mesa-dev libgles2-mesa-dev > /dev/null && \
     apt-get install -y mesa-utils > /dev/null && \
     apt-get clean && \
