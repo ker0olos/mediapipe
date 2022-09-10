@@ -1,0 +1,4 @@
+name: Setup mediapipe
+runs:
+  using: docker
+  image: Dockerfile
