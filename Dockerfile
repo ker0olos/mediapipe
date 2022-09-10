@@ -1,3 +1,3 @@
-FROM ghcr.io/ker0olos/ker0olos/mediapipe:latest
+FROM ghcr.io/ker0olos/mediapipe:latest
 
 ENTRYPOINT ["/mediapipe/entrypoint.sh"]
