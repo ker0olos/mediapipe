@@ -36,6 +36,6 @@ cc_library(
     #     "-l:libopencv_imgproc.so",
     #     "-l:libopencv_video.so",
     #     "-l:libopencv_videoio.so",
-    ],
+    # ],
     visibility = ["//visibility:public"],
 )
