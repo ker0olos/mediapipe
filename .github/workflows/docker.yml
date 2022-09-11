@@ -1,10 +1,9 @@
 name: Docker Image
 
-on: workflow_dispatch
-# on:
-#   push:
-#     branches:
-#       - 'master'
+on:
+  push:
+    branches:
+      - "master"
 
 jobs:
   build-and-push-image:
@@ -33,6 +32,7 @@ jobs:
           push: true
           context: .
           file: "./Dockerfile.lib"
-          tags: ghcr.io/${{ github.repository }}:opencv4
+          tags: |
+            ghcr.io/${{ github.repository }}:opencv4,ghcr.io/${{ github.repository }}:latest
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache4
           cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache4,mode=max
