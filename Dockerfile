@@ -87,8 +87,8 @@ FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 ENV CARGO_TERM_COLOR=always
-ENV CARGO_HOME=/github/home/.cargo
-ENV PATH="/github/home/.cargo/bin:${PATH}"
+ENV CARGO_HOME=/root/.cargo
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 # install opencv and other common dependencies
 RUN apt-get -qq update && apt-get install -y --no-install-recommends \
