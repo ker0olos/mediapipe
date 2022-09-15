@@ -84,10 +84,12 @@ RUN bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
 
 FROM ubuntu:20.04
 
+ENV CARGO_TERM_COLOR=always
 ENV DEBIAN_FRONTEND=noninteractive
 
-ENV CARGO_TERM_COLOR=always
 ENV CARGO_HOME=/root/.cargo
+ENV RUSTUP_HOME=/root/.rustup
+
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # install opencv and other common dependencies
@@ -100,6 +102,7 @@ RUN apt-get -qq update && apt-get install -y --no-install-recommends \
 
 # install rust
 RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable-x86_64-unknown-linux-gnu -y
+RUN rustup install nightly-x86_64-unknown-linux-gnu
 RUN cargo install bindgen
 
 # install mediagraph
