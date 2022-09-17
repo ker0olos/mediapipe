@@ -95,7 +95,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # install opencv and other common dependencies
 RUN apt-get -qq update && apt-get install -y --no-install-recommends \
     ffmpeg curl libopencv-dev \
-    build-essential llvm-dev libclang-dev clang lld gcc-8 g++-8 \
+    build-essential llvm-dev libclang-dev clang lld gcc g++ \
     software-properties-common > /dev/null && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
