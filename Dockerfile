@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM ubuntu:20.04 AS builder
+FROM ubuntu:22.04 AS builder
 
 WORKDIR /mediapipe
 
@@ -19,7 +19,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get -qq update && apt-get install -y --no-install-recommends \
     build-essential \
-    gcc-8 g++-8 \
+    gcc g++ \
     ca-certificates \
     curl \
     ffmpeg \
