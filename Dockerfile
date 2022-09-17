@@ -102,6 +102,7 @@ RUN apt-get -qq update && apt-get install -y --no-install-recommends \
 
 # install rust
 RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable-x86_64-unknown-linux-gnu -y
+RUN rustup component add llvm-tools-preview --toolchain stable-x86_64-unknown-linux-gnu
 RUN cargo install bindgen
 
 # install mediagraph
