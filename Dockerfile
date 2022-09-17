@@ -82,7 +82,7 @@ RUN bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
 # For other use cases: fork, edit and commit
 # then wait until github builds it for you
 
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ENV CARGO_TERM_COLOR=always
 ENV DEBIAN_FRONTEND=noninteractive
@@ -95,14 +95,14 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # install opencv and other common dependencies
 RUN apt-get -qq update && apt-get install -y --no-install-recommends \
     ffmpeg curl libopencv-dev \
-    build-essential llvm-dev libclang-dev clang gcc-8 g++-8 \
+    build-essential llvm-dev libclang-dev clang lld gcc-8 g++-8 \
     software-properties-common > /dev/null && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # install rust
-RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable-x86_64-unknown-linux-gnu -y
-RUN rustup component add llvm-tools-preview --toolchain stable-x86_64-unknown-linux-gnu
+RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain 1.63.0-x86_64-unknown-linux-gnu -y
+RUN rustup component add llvm-tools-preview --toolchain 1.63.0-x86_64-unknown-linux-gnu
 RUN cargo install bindgen
 
 # install mediagraph
