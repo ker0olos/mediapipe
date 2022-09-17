@@ -38,6 +38,15 @@ RUN apt-get -qq update && apt-get install -y --no-install-recommends \
     libopencv-video-dev \
     libopencv-calib3d-dev \
     libopencv-features2d-dev \
+    libavformat-dev \
+    libdc1394-dev \
+    libgtk2.0-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libswscale-dev \
+    libtbb2 \
+    libtbb-dev \
+    libtiff-dev \
     software-properties-common > /dev/null && \
     add-apt-repository -y ppa:openjdk-r/ppa > /dev/null && \
     apt-get -qq update && apt-get install -y openjdk-8-jdk > /dev/null && \
