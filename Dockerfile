@@ -27,6 +27,7 @@ RUN apt-get -qq update && apt-get install -y --no-install-recommends \
     wget \
     cmake \
     unzip \
+    gpg-agent \
     python3-dev \
     python3-opencv \
     python3-pip \
