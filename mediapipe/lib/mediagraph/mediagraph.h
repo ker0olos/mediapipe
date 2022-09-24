@@ -1,7 +1,6 @@
 #include <opencv2/core/mat.hpp>
 
 class FaceMeshGraph;
-struct FaceMesh;
 struct Landmark;
 struct Landmark {
   float x;
@@ -10,27 +9,20 @@ struct Landmark {
   float visibility;
   float presence;
 };
-struct FaceMesh {
-    Landmark data[478];
-};
 class FaceMeshGraph {
   public:
     FaceMeshGraph(const char* graph_config, const char* output_node);
-    bool process(const cv::Mat *input, FaceMesh &mesh);
+    bool process(const cv::Mat *input, Landmark output[478]);
     ~FaceMeshGraph();
   private:
     void* poller;
     void* graph;
 };
 class PoseGraph;
-struct Pose;
-struct Pose {
-    Landmark data[33];
-};
 class PoseGraph {
   public: 
     PoseGraph(const char* graph_config, const char* output_node);
-    bool process(const cv::Mat *input, Pose &output);
+    bool process(const cv::Mat *input, Landmark output[33]);
     ~PoseGraph();
   private: 
     void* poller;

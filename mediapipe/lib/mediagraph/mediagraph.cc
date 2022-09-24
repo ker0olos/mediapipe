@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 #include <cstdlib>
 #include <string>
 
@@ -31,7 +30,6 @@
 
 constexpr char kInputStream[] = "input_video";
 
-// -calculator_graph_config_file=mediapipe/graphs/pose_tracking/pose_tracking_cpu.pbtxt
 struct Landmark {
   float x;
   float y;
@@ -40,22 +38,10 @@ struct Landmark {
   float presence;
 };
 
-struct Pose {
-    Landmark data[33];
-};
-
-struct Hand {
-    Landmark data[21];
-};
-
-struct FaceMesh {
-    Landmark data[478];
-};
-
 class PoseGraph {
   public: 
     PoseGraph(const char* graph_config, const char* output_node);
-    bool process(const cv::Mat *input, Pose &output);
+    bool process(const cv::Mat *input, Landmark output[33]);
     ~PoseGraph();
   private: 
     std::unique_ptr<mediapipe::OutputStreamPoller> poller;
@@ -93,7 +79,7 @@ PoseGraph::~PoseGraph() {
   graph->WaitUntilDone();
 }
 
-bool PoseGraph::process(const cv::Mat *input, Pose &output) {
+bool PoseGraph::process(const cv::Mat *input, Landmark output[33]) {
   // Wrap Mat into an ImageFrame.
   auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
       mediapipe::ImageFormat::SRGB, input->cols, input->rows,
@@ -124,7 +110,7 @@ bool PoseGraph::process(const cv::Mat *input, Pose &output) {
       for (int idx = 0; idx < landmarks.landmark_size(); ++idx) { 
         const mediapipe::NormalizedLandmark& landmark = landmarks.landmark(idx);
     
-        output.data[idx] = {
+        output[idx] = {
 	  .x = landmark.x(),
           .y = landmark.y(),
           .z = landmark.z(),
@@ -144,7 +130,7 @@ bool PoseGraph::process(const cv::Mat *input, Pose &output) {
 class FaceMeshGraph {
   public:
     FaceMeshGraph(const char* graph_config, const char* output_node);
-    bool process(const cv::Mat *input, FaceMesh &mesh);
+    bool process(const cv::Mat *input, Landmark output[478]);
     ~FaceMeshGraph();
   private:
     std::unique_ptr<mediapipe::OutputStreamPoller> poller;
@@ -164,9 +150,6 @@ FaceMeshGraph::FaceMeshGraph(const char* graph_config, const char* output_node) 
   }
 
   mediapipe::StatusOrPoller sop = graph->AddOutputStreamPoller(output_node);
-  // if (!status_or_poller.ok()) {
-  //   throw std::runtime_error("hi");
-  // }
 
    if (!sop.ok()) {
      std::cerr << "Failed to add poller to graph: [" << sop.status().message() << "]" << std::endl;
@@ -187,7 +170,7 @@ FaceMeshGraph::~FaceMeshGraph() {
   graph->WaitUntilDone();
 }
 
-bool FaceMeshGraph::process(const cv::Mat *input, FaceMesh &mesh) {
+bool FaceMeshGraph::process(const cv::Mat *input, Landmark output[478]) {
   // Wrap Mat into an ImageFrame.
   auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
       mediapipe::ImageFormat::SRGB, input->cols, input->rows,
@@ -215,19 +198,18 @@ bool FaceMeshGraph::process(const cv::Mat *input, FaceMesh &mesh) {
     if (poller->Next(&packet)) {
       auto& faces = packet.Get<std::vector<mediapipe::NormalizedLandmarkList>>();
 
-      // left
       if (faces.size() > 0) {
           const mediapipe::NormalizedLandmarkList &face = faces.at(0);
           // 478 landmarks with irises, 468 without
           for (int idx = 0; idx < face.landmark_size(); ++idx) {
             const mediapipe::NormalizedLandmark& landmark = face.landmark(idx);
 
-            mesh.data[idx] = {
+            output[idx] = {
               .x = landmark.x(),
               .y = landmark.y(),
               .z = landmark.z(),
-              .visibility = landmark.visibility(),
-              .presence = landmark.presence(),
+              .visibility = 0,
+              .presence = 0,
             };
           }
       }
