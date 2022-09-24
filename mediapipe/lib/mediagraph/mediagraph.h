@@ -11,7 +11,7 @@ struct Landmark {
 };
 class FaceMeshGraph {
   public:
-    FaceMeshGraph(const char* graph_config, const char* output_node);
+    FaceMeshGraph();
     bool process(const cv::Mat *input, Landmark output[478]);
     ~FaceMeshGraph();
   private:
@@ -21,7 +21,7 @@ class FaceMeshGraph {
 class PoseGraph;
 class PoseGraph {
   public: 
-    PoseGraph(const char* graph_config, const char* output_node);
+    PoseGraph();
     bool process(const cv::Mat *input, Landmark output[33]);
     ~PoseGraph();
   private: 
