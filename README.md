@@ -10,11 +10,56 @@ bazel build --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/lib/mediagraph
 sudo cp bazel-bin/mediapipe/lib/mediagraph/libmediagraph.so /usr/lib/libmediagraph.so && sudo cp mediapipe/lib/mediagraph/mediagraph.h /usr/include/mediagraph.h
 ```
 
+### Using in Rust
+
+First you need to create a bindings. Here's what I use.
+
+```bash
+HEADER_FILE="/usr/include/mediagraph.h"
+
+~/.cargo/bin/bindgen \
+--opaque-type "std::.*" \
+--opaque-type "cv::.*" \
+--allowlist-type "FaceMeshGraph" \
+--allowlist-var "FaceMeshGraph" \
+--allowlist-function "FaceMeshGraph" \
+--allowlist-type "PoseGraph" \
+--allowlist-var "PoseGraph" \
+--allowlist-function "PoseGraph" \
+"$HEADER_FILE" \
+-o src/bindings.rs \
+-- -xc++ -std=c++14 -I/usr/include/opencv4
+```
+
+Then you need to add those couple of lines to your `lib.rs`
+
+```rust
+#[link(name = "mediagraph")]
+extern "C" {}
+```
+
+Then it's as easy as this.
+
+```rust
+let face_landmarks_bbox = bindings::FaceBox::new();
+let face_landmarks = [bindings::Landmark::new(); 478];
+let face_graph = unsafe { bindings::FaceMeshGraph::new() };
+let images_as_bytes = include_bytes!("../../examples/images/test_normal.jpeg").to_vec();
+
+let mat = opencv::imgcodecs::imdecode(&opencv::types::VectorOfu8::from_iter(images_as_bytes), opencv::imgcodecs::IMREAD_ANYCOLOR);
+let mat_raw = input.as_raw() as *const bindings::cv_Mat;
+
+face_graph.process(mat_raw, face_landmarks.as_mut_ptr(), &mut face_landmarks_bbox);
+
+// I said easy, not short.
+```
+
 ### Github Actions
 
 ```yml
-# add this and it will automatically
-# install libmediagraph.so and the mediagraph.h
+# To easliy use the library in CI. add those bits to your workflow
+# this will install libmediagraph.so and the mediagraph.h
+# in your system so you can use them like your local machine 
 runs-on: ubuntu-latest
 container: ghcr.io/ker0olos/mediapipe:opencv4
 steps:
