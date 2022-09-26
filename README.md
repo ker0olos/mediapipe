@@ -66,6 +66,21 @@ steps:
   ...
 ```
 
+### Known Issues
+
+Rust drops this error whenever you are not using `opencv::videoio::VideoCapture::new(..)`
+
+`symbol lookup error: /usr/lib/libmediagraph.so: undefined symbol: _ZN2cv12VideoCaptureC1ERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEi`
+
+I spent a lot of time trying to fix the issue with no avail. So I ended up doing exacly what it wanted and did this
+
+```rust
+opencv::videoio::VideoCapture::from_file("/dev/null", 0);
+let face_graph = unsafe { bindings::FaceMeshGraph::new() };
+```
+
+Which fixed the compile but casues me nightmares each night. If you know how to fix this. Drop a pull request. 
+
 ### Credits
 
 > I literally started learning rust because of those repos showed me that I can use mediapipe in it. Without looking though each commit and learning from it, I wouldn't have ever been able to do something like this.
