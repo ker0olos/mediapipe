@@ -81,6 +81,10 @@ let face_graph = unsafe { bindings::FaceMeshGraph::new() };
 
 Which fixed the compile but casues me nightmares each night. If you know how to fix this. Drop a pull request. 
 
+---
+
+**There's only single face tracking and single pose tracking**, that's because they are what I use, and willing to test and maintain. You can fork this repo, modify the `mediagraph.cc` and `mediagraph.h` files using a bit of knowledge from the (mediapipe.dev)[mediapipe.dev] to add the feature you need.
+
 ### Credits
 
 > I literally started learning rust because of those repos showed me that I can use mediapipe in it. Without looking though each commit and learning from it, I wouldn't have ever been able to do something like this.
