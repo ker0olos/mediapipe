@@ -106,7 +106,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 RUN apt-get -qq update && apt-get install -y --no-install-recommends \
     ffmpeg curl libopencv-dev \
     build-essential llvm-dev libclang-dev clang lld gcc g++ \
-    software-properties-common > /dev/null && \
+    software-properties-common protobuf-compiler > /dev/null && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

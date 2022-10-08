@@ -21,7 +21,6 @@ cc_binary(
     deps = [
         ":mediagraph_"
     ],
-    # linkopts = ["-Wl,-soname,libexample.so"],
     linkshared = 1 ## Very important
 )
 
