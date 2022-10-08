@@ -4,7 +4,9 @@
 #include <string>
 #include <type_traits>
 
+#include "absl/container/btree_map.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/strings/string_view.h"
 #include "mediapipe/framework/api2/const_str.h"
 #include "mediapipe/framework/api2/contract.h"
 #include "mediapipe/framework/api2/node.h"
@@ -46,7 +48,7 @@ struct TagIndexLocation {
 template <typename T>
 class TagIndexMap {
  public:
-  std::vector<std::unique_ptr<T>>& operator[](const std::string& tag) {
+  std::vector<std::unique_ptr<T>>& operator[](absl::string_view tag) {
     return map_[tag];
   }
 
@@ -72,7 +74,7 @@ class TagIndexMap {
 
   // Note: entries are held by a unique_ptr to ensure pointers remain valid.
   // Should use absl::flat_hash_map but ordering keys for now.
-  std::map<std::string, std::vector<std::unique_ptr<T>>> map_;
+  absl::btree_map<std::string, std::vector<std::unique_ptr<T>>> map_;
 };
 
 class Graph;
@@ -110,6 +112,14 @@ class MultiPort : public Single {
   std::vector<std::unique_ptr<Base>>& vec_;
 };
 
+namespace internal_builder {
+
+template <typename T, typename U>
+using AllowCast = std::integral_constant<bool, std::is_same_v<T, AnyType> &&
+                                                   !std::is_same_v<T, U>>;
+
+}  // namespace internal_builder
+
 // These classes wrap references to the underlying source/destination
 // endpoints, adding type information and the user-visible API.
 template <bool IsSide, typename T = internal::Generic>
@@ -120,13 +130,14 @@ class DestinationImpl {
   explicit DestinationImpl(std::vector<std::unique_ptr<Base>>* vec)
       : DestinationImpl(&GetWithAutoGrow(vec, 0)) {}
   explicit DestinationImpl(DestinationBase* base) : base_(*base) {}
-  DestinationBase& base_;
-};
 
-template <bool IsSide, typename T>
-class MultiDestinationImpl : public MultiPort<DestinationImpl<IsSide, T>> {
- public:
-  using MultiPort<DestinationImpl<IsSide, T>>::MultiPort;
+  template <typename U,
+            std::enable_if_t<internal_builder::AllowCast<T, U>{}, int> = 0>
+  DestinationImpl<IsSide, U> Cast() {
+    return DestinationImpl<IsSide, U>(&base_);
+  }
+
+  DestinationBase& base_;
 };
 
 template <bool IsSide, typename T = internal::Generic>
@@ -169,15 +180,15 @@ class SourceImpl {
     return AddTarget(dest);
   }
 
+  template <typename U,
+            std::enable_if_t<internal_builder::AllowCast<T, U>{}, int> = 0>
+  SourceImpl<IsSide, U> Cast() {
+    return SourceImpl<IsSide, U>(base_);
+  }
+
  private:
   // Never null.
   SourceBase* base_;
-};
-
-template <bool IsSide, typename T>
-class MultiSourceImpl : public MultiPort<SourceImpl<IsSide, T>> {
- public:
-  using MultiPort<SourceImpl<IsSide, T>>::MultiPort;
 };
 
 // A source and a destination correspond to an output/input stream on a node,
@@ -189,20 +200,20 @@ class MultiSourceImpl : public MultiPort<SourceImpl<IsSide, T>> {
 template <typename T = internal::Generic>
 using Source = SourceImpl<false, T>;
 template <typename T = internal::Generic>
-using MultiSource = MultiSourceImpl<false, T>;
+using MultiSource = MultiPort<Source<T>>;
 template <typename T = internal::Generic>
 using SideSource = SourceImpl<true, T>;
 template <typename T = internal::Generic>
-using MultiSideSource = MultiSourceImpl<true, T>;
+using MultiSideSource = MultiPort<SideSource<T>>;
 
 template <typename T = internal::Generic>
 using Destination = DestinationImpl<false, T>;
 template <typename T = internal::Generic>
 using SideDestination = DestinationImpl<true, T>;
 template <typename T = internal::Generic>
-using MultiDestination = MultiDestinationImpl<false, T>;
+using MultiDestination = MultiPort<Destination<T>>;
 template <typename T = internal::Generic>
-using MultiSideDestination = MultiDestinationImpl<true, T>;
+using MultiSideDestination = MultiPort<SideDestination<T>>;
 
 class NodeBase {
  public:
@@ -212,19 +223,19 @@ class NodeBase {
   // of its entries by index. However, for nodes without visible contracts we
   // can't know whether a tag is indexable or not, so we would need the
   // multi-port to also be usable as a port directly (representing index 0).
-  MultiSource<> Out(const std::string& tag) {
+  MultiSource<> Out(absl::string_view tag) {
     return MultiSource<>(&out_streams_[tag]);
   }
 
-  MultiDestination<> In(const std::string& tag) {
+  MultiDestination<> In(absl::string_view tag) {
     return MultiDestination<>(&in_streams_[tag]);
   }
 
-  MultiSideSource<> SideOut(const std::string& tag) {
+  MultiSideSource<> SideOut(absl::string_view tag) {
     return MultiSideSource<>(&out_sides_[tag]);
   }
 
-  MultiSideDestination<> SideIn(const std::string& tag) {
+  MultiSideDestination<> SideIn(absl::string_view tag) {
     return MultiSideDestination<>(&in_sides_[tag]);
   }
 
@@ -359,11 +370,11 @@ class PacketGenerator {
  public:
   PacketGenerator(std::string type) : type_(std::move(type)) {}
 
-  MultiSideSource<> SideOut(const std::string& tag) {
+  MultiSideSource<> SideOut(absl::string_view tag) {
     return MultiSideSource<>(&out_sides_[tag]);
   }
 
-  MultiSideDestination<> SideIn(const std::string& tag) {
+  MultiSideDestination<> SideIn(absl::string_view tag) {
     return MultiSideDestination<>(&in_sides_[tag]);
   }
 
@@ -452,19 +463,19 @@ class Graph {
   }
 
   // Graph ports, non-typed.
-  MultiSource<> In(const std::string& graph_input) {
+  MultiSource<> In(absl::string_view graph_input) {
     return graph_boundary_.Out(graph_input);
   }
 
-  MultiDestination<> Out(const std::string& graph_output) {
+  MultiDestination<> Out(absl::string_view graph_output) {
     return graph_boundary_.In(graph_output);
   }
 
-  MultiSideSource<> SideIn(const std::string& graph_input) {
+  MultiSideSource<> SideIn(absl::string_view graph_input) {
     return graph_boundary_.SideOut(graph_input);
   }
 
-  MultiSideDestination<> SideOut(const std::string& graph_output) {
+  MultiSideDestination<> SideOut(absl::string_view graph_output) {
     return graph_boundary_.SideIn(graph_output);
   }
 

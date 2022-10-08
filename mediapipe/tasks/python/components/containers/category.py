@@ -1,4 +1,4 @@
-# Copyright 2022 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2022 The MediaPipe Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 import dataclasses
 from typing import Any
 
-from mediapipe.tasks.cc.components.containers import category_pb2
+from mediapipe.tasks.cc.components.containers.proto import category_pb2
 from mediapipe.tasks.python.core.optional_dependencies import doc_controls
 
 _CategoryProto = category_pb2.Category
