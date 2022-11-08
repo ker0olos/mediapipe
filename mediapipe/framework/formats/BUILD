@@ -293,7 +293,6 @@ mediapipe_proto_library(
     name = "rect_proto",
     srcs = ["rect.proto"],
     visibility = ["//visibility:public"],
-    deps = ["//mediapipe/framework/formats:location_data_proto"],
 )
 
 mediapipe_register_type(
@@ -460,6 +459,10 @@ cc_library(
             "-x objective-c++",
             "-fobjc-arc",  # enable reference-counting
         ],
+        "//conditions:default": [],
+    }),
+    defines = select({
+        "//mediapipe/framework:android_no_jni": ["MEDIAPIPE_NO_JNI"],
         "//conditions:default": [],
     }),
     linkopts = select({

@@ -17,8 +17,8 @@ package(default_visibility = ["//mediapipe/tasks:internal"])
 licenses(["notice"])
 
 cc_library(
-    name = "landmarks_detection",
-    hdrs = ["landmarks_detection.h"],
+    name = "rect",
+    hdrs = ["rect.h"],
 )
 
 cc_library(
@@ -27,5 +27,43 @@ cc_library(
     deps = [
         "//mediapipe/framework/formats:classification_cc_proto",
         "//mediapipe/framework/formats:landmark_cc_proto",
+    ],
+)
+
+cc_library(
+    name = "hand_landmarks_detection_result",
+    hdrs = ["hand_landmarks_detection_result.h"],
+    deps = [
+        "//mediapipe/framework/formats:classification_cc_proto",
+        "//mediapipe/framework/formats:landmark_cc_proto",
+    ],
+)
+
+cc_library(
+    name = "category",
+    srcs = ["category.cc"],
+    hdrs = ["category.h"],
+    deps = [
+        "//mediapipe/framework/formats:classification_cc_proto",
+    ],
+)
+
+cc_library(
+    name = "classification_result",
+    srcs = ["classification_result.cc"],
+    hdrs = ["classification_result.h"],
+    deps = [
+        ":category",
+        "//mediapipe/framework/formats:classification_cc_proto",
+        "//mediapipe/tasks/cc/components/containers/proto:classifications_cc_proto",
+    ],
+)
+
+cc_library(
+    name = "embedding_result",
+    srcs = ["embedding_result.cc"],
+    hdrs = ["embedding_result.h"],
+    deps = [
+        "//mediapipe/tasks/cc/components/containers/proto:embeddings_cc_proto",
     ],
 )

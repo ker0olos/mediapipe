@@ -15,7 +15,6 @@
 import os
 
 from absl.testing import parameterized
-import numpy as np
 import tensorflow as tf
 
 from mediapipe.model_maker.python.core.utils import model_util
@@ -24,6 +23,18 @@ from mediapipe.model_maker.python.core.utils import test_util
 
 
 class ModelUtilTest(tf.test.TestCase, parameterized.TestCase):
+
+  def test_load_model(self):
+    input_dim = 4
+    model = test_util.build_model(input_shape=[input_dim], num_classes=2)
+    saved_model_path = os.path.join(self.get_temp_dir(), 'saved_model')
+    model.save(saved_model_path)
+    loaded_model = model_util.load_keras_model(saved_model_path)
+
+    input_tensors = test_util.create_random_sample(size=[1, input_dim])
+    model_output = model.predict_on_batch(input_tensors)
+    loaded_model_output = loaded_model.predict_on_batch(input_tensors)
+    self.assertTrue((model_output == loaded_model_output).all())
 
   @parameterized.named_parameters(
       dict(
@@ -84,12 +95,12 @@ class ModelUtilTest(tf.test.TestCase, parameterized.TestCase):
             'name': 'test'
         })
 
-  def test_export_tflite(self):
+  def test_convert_to_tflite(self):
     input_dim = 4
     model = test_util.build_model(input_shape=[input_dim], num_classes=2)
-    tflite_file = os.path.join(self.get_temp_dir(), 'model.tflite')
-    model_util.export_tflite(model, tflite_file)
-    self._test_tflite(model, tflite_file, input_dim)
+    tflite_model = model_util.convert_to_tflite(model)
+    test_util.test_tflite(
+        keras_model=model, tflite_model=tflite_model, size=[1, input_dim])
 
   @parameterized.named_parameters(
       dict(
@@ -106,32 +117,32 @@ class ModelUtilTest(tf.test.TestCase, parameterized.TestCase):
           testcase_name='float16_quantize',
           config=quantization.QuantizationConfig.for_float16(),
           model_size=1468))
-  def test_export_tflite_quantized(self, config, model_size):
+  def test_convert_to_tflite_quantized(self, config, model_size):
     input_dim = 16
     num_classes = 2
     max_input_value = 5
-    model = test_util.build_model([input_dim], num_classes)
-    tflite_file = os.path.join(self.get_temp_dir(), 'model_quantized.tflite')
+    model = test_util.build_model(
+        input_shape=[input_dim], num_classes=num_classes)
 
-    model_util.export_tflite(model, tflite_file, config)
-    self._test_tflite(
-        model, tflite_file, input_dim, max_input_value, atol=1e-00)
-    self.assertNear(os.path.getsize(tflite_file), model_size, 300)
-
-  def _test_tflite(self,
-                   keras_model: tf.keras.Model,
-                   tflite_model_file: str,
-                   input_dim: int,
-                   max_input_value: int = 1000,
-                   atol: float = 1e-04):
-    np.random.seed(0)
-    random_input = np.random.uniform(
-        low=0, high=max_input_value, size=(1, input_dim)).astype(np.float32)
-
+    tflite_model = model_util.convert_to_tflite(
+        model=model, quantization_config=config)
     self.assertTrue(
-        test_util.is_same_output(
-            tflite_model_file, keras_model, random_input, atol=atol))
+        test_util.test_tflite(
+            keras_model=model,
+            tflite_model=tflite_model,
+            size=[1, input_dim],
+            high=max_input_value,
+            atol=1e-00))
+    self.assertNear(len(tflite_model), model_size, 300)
 
+  def test_save_tflite(self):
+    input_dim = 4
+    model = test_util.build_model(input_shape=[input_dim], num_classes=2)
+    tflite_model = model_util.convert_to_tflite(model)
+    tflite_file = os.path.join(self.get_temp_dir(), 'model.tflite')
+    model_util.save_tflite(tflite_model=tflite_model, tflite_file=tflite_file)
+    test_util.test_tflite_file(
+        keras_model=model, tflite_file=tflite_file, size=[1, input_dim])
 
 if __name__ == '__main__':
   tf.test.main()

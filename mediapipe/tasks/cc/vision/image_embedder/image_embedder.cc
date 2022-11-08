@@ -21,14 +21,16 @@ limitations under the License.
 #include "mediapipe/framework/api2/builder.h"
 #include "mediapipe/framework/formats/rect.pb.h"
 #include "mediapipe/framework/tool/options_map.h"
+#include "mediapipe/tasks/cc/components/containers/embedding_result.h"
 #include "mediapipe/tasks/cc/components/containers/proto/embeddings.pb.h"
-#include "mediapipe/tasks/cc/components/embedder_options.h"
-#include "mediapipe/tasks/cc/components/proto/embedder_options.pb.h"
+#include "mediapipe/tasks/cc/components/processors/embedder_options.h"
+#include "mediapipe/tasks/cc/components/processors/proto/embedder_options.pb.h"
 #include "mediapipe/tasks/cc/components/utils/cosine_similarity.h"
 #include "mediapipe/tasks/cc/core/base_options.h"
 #include "mediapipe/tasks/cc/core/proto/base_options.pb.h"
 #include "mediapipe/tasks/cc/core/task_runner.h"
 #include "mediapipe/tasks/cc/core/utils.h"
+#include "mediapipe/tasks/cc/vision/core/image_processing_options.h"
 #include "mediapipe/tasks/cc/vision/core/running_mode.h"
 #include "mediapipe/tasks/cc/vision/core/vision_task_api_factory.h"
 #include "mediapipe/tasks/cc/vision/image_embedder/proto/image_embedder_graph_options.pb.h"
@@ -40,8 +42,8 @@ namespace image_embedder {
 
 namespace {
 
-constexpr char kEmbeddingResultStreamName[] = "embedding_result_out";
-constexpr char kEmbeddingResultTag[] = "EMBEDDING_RESULT";
+constexpr char kEmbeddingsStreamName[] = "embeddings_out";
+constexpr char kEmbeddingsTag[] = "EMBEDDINGS";
 constexpr char kImageInStreamName[] = "image_in";
 constexpr char kImageOutStreamName[] = "image_out";
 constexpr char kImageTag[] = "IMAGE";
@@ -52,21 +54,11 @@ constexpr char kGraphTypeName[] =
     "mediapipe.tasks.vision.image_embedder.ImageEmbedderGraph";
 constexpr int kMicroSecondsPerMilliSecond = 1000;
 
-using ::mediapipe::tasks::components::containers::proto::EmbeddingEntry;
+using ::mediapipe::tasks::components::containers::ConvertToEmbeddingResult;
 using ::mediapipe::tasks::components::containers::proto::EmbeddingResult;
 using ::mediapipe::tasks::core::PacketMap;
 using ::mediapipe::tasks::vision::image_embedder::proto::
     ImageEmbedderGraphOptions;
-
-// Builds a NormalizedRect covering the entire image.
-NormalizedRect BuildFullImageNormRect() {
-  NormalizedRect norm_rect;
-  norm_rect.set_x_center(0.5);
-  norm_rect.set_y_center(0.5);
-  norm_rect.set_width(1);
-  norm_rect.set_height(1);
-  return norm_rect;
-}
 
 // Creates a MediaPipe graph config that contains a single node of type
 // "mediapipe.tasks.vision.image_embedder.ImageEmbedderGraph". If the task is
@@ -80,13 +72,13 @@ CalculatorGraphConfig CreateGraphConfig(
   graph.In(kNormRectTag).SetName(kNormRectStreamName);
   auto& task_graph = graph.AddNode(kGraphTypeName);
   task_graph.GetOptions<ImageEmbedderGraphOptions>().Swap(options_proto.get());
-  task_graph.Out(kEmbeddingResultTag).SetName(kEmbeddingResultStreamName) >>
-      graph.Out(kEmbeddingResultTag);
+  task_graph.Out(kEmbeddingsTag).SetName(kEmbeddingsStreamName) >>
+      graph.Out(kEmbeddingsTag);
   task_graph.Out(kImageTag).SetName(kImageOutStreamName) >>
       graph.Out(kImageTag);
   if (enable_flow_limiting) {
     return tasks::core::AddFlowLimiterCalculator(
-        graph, task_graph, {kImageTag, kNormRectTag}, kEmbeddingResultTag);
+        graph, task_graph, {kImageTag, kNormRectTag}, kEmbeddingsTag);
   }
   graph.In(kImageTag) >> task_graph.In(kImageTag);
   graph.In(kNormRectTag) >> task_graph.In(kNormRectTag);
@@ -104,8 +96,8 @@ std::unique_ptr<ImageEmbedderGraphOptions> ConvertImageEmbedderOptionsToProto(
   options_proto->mutable_base_options()->set_use_stream_mode(
       options->running_mode != core::RunningMode::IMAGE);
   auto embedder_options_proto =
-      std::make_unique<tasks::components::proto::EmbedderOptions>(
-          components::ConvertEmbedderOptionsToProto(
+      std::make_unique<components::processors::proto::EmbedderOptions>(
+          components::processors::ConvertEmbedderOptionsToProto(
               &(options->embedder_options)));
   options_proto->mutable_embedder_options()->Swap(embedder_options_proto.get());
   return options_proto;
@@ -130,9 +122,10 @@ absl::StatusOr<std::unique_ptr<ImageEmbedder>> ImageEmbedder::Create(
             return;
           }
           Packet embedding_result_packet =
-              status_or_packets.value()[kEmbeddingResultStreamName];
+              status_or_packets.value()[kEmbeddingsStreamName];
           Packet image_packet = status_or_packets.value()[kImageOutStreamName];
-          result_callback(embedding_result_packet.Get<EmbeddingResult>(),
+          result_callback(ConvertToEmbeddingResult(
+                              embedding_result_packet.Get<EmbeddingResult>()),
                           image_packet.Get<Image>(),
                           embedding_result_packet.Timestamp().Value() /
                               kMicroSecondsPerMilliSecond);
@@ -147,35 +140,38 @@ absl::StatusOr<std::unique_ptr<ImageEmbedder>> ImageEmbedder::Create(
       std::move(packets_callback));
 }
 
-absl::StatusOr<EmbeddingResult> ImageEmbedder::Embed(
-    Image image, std::optional<NormalizedRect> roi) {
+absl::StatusOr<ImageEmbedderResult> ImageEmbedder::Embed(
+    Image image,
+    std::optional<core::ImageProcessingOptions> image_processing_options) {
   if (image.UsesGpu()) {
     return CreateStatusWithPayload(
         absl::StatusCode::kInvalidArgument,
         "GPU input images are currently not supported.",
         MediaPipeTasksStatus::kRunnerUnexpectedInputError);
   }
-  NormalizedRect norm_rect =
-      roi.has_value() ? roi.value() : BuildFullImageNormRect();
+  ASSIGN_OR_RETURN(NormalizedRect norm_rect,
+                   ConvertToNormalizedRect(image_processing_options));
   ASSIGN_OR_RETURN(
       auto output_packets,
       ProcessImageData(
           {{kImageInStreamName, MakePacket<Image>(std::move(image))},
            {kNormRectStreamName,
             MakePacket<NormalizedRect>(std::move(norm_rect))}}));
-  return output_packets[kEmbeddingResultStreamName].Get<EmbeddingResult>();
+  return ConvertToEmbeddingResult(
+      output_packets[kEmbeddingsStreamName].Get<EmbeddingResult>());
 }
 
-absl::StatusOr<EmbeddingResult> ImageEmbedder::EmbedForVideo(
-    Image image, int64 timestamp_ms, std::optional<NormalizedRect> roi) {
+absl::StatusOr<ImageEmbedderResult> ImageEmbedder::EmbedForVideo(
+    Image image, int64 timestamp_ms,
+    std::optional<core::ImageProcessingOptions> image_processing_options) {
   if (image.UsesGpu()) {
     return CreateStatusWithPayload(
         absl::StatusCode::kInvalidArgument,
         "GPU input images are currently not supported.",
         MediaPipeTasksStatus::kRunnerUnexpectedInputError);
   }
-  NormalizedRect norm_rect =
-      roi.has_value() ? roi.value() : BuildFullImageNormRect();
+  ASSIGN_OR_RETURN(NormalizedRect norm_rect,
+                   ConvertToNormalizedRect(image_processing_options));
   ASSIGN_OR_RETURN(
       auto output_packets,
       ProcessVideoData(
@@ -185,19 +181,21 @@ absl::StatusOr<EmbeddingResult> ImageEmbedder::EmbedForVideo(
            {kNormRectStreamName,
             MakePacket<NormalizedRect>(std::move(norm_rect))
                 .At(Timestamp(timestamp_ms * kMicroSecondsPerMilliSecond))}}));
-  return output_packets[kEmbeddingResultStreamName].Get<EmbeddingResult>();
+  return ConvertToEmbeddingResult(
+      output_packets[kEmbeddingsStreamName].Get<EmbeddingResult>());
 }
 
-absl::Status ImageEmbedder::EmbedAsync(Image image, int64 timestamp_ms,
-                                       std::optional<NormalizedRect> roi) {
+absl::Status ImageEmbedder::EmbedAsync(
+    Image image, int64 timestamp_ms,
+    std::optional<core::ImageProcessingOptions> image_processing_options) {
   if (image.UsesGpu()) {
     return CreateStatusWithPayload(
         absl::StatusCode::kInvalidArgument,
         "GPU input images are currently not supported.",
         MediaPipeTasksStatus::kRunnerUnexpectedInputError);
   }
-  NormalizedRect norm_rect =
-      roi.has_value() ? roi.value() : BuildFullImageNormRect();
+  ASSIGN_OR_RETURN(NormalizedRect norm_rect,
+                   ConvertToNormalizedRect(image_processing_options));
   return SendLiveStreamData(
       {{kImageInStreamName,
         MakePacket<Image>(std::move(image))
@@ -208,7 +206,8 @@ absl::Status ImageEmbedder::EmbedAsync(Image image, int64 timestamp_ms,
 }
 
 absl::StatusOr<double> ImageEmbedder::CosineSimilarity(
-    const EmbeddingEntry& u, const EmbeddingEntry& v) {
+    const components::containers::Embedding& u,
+    const components::containers::Embedding& v) {
   return components::utils::CosineSimilarity(u, v);
 }
 

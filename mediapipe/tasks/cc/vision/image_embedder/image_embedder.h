@@ -21,17 +21,21 @@ limitations under the License.
 
 #include "absl/status/statusor.h"
 #include "mediapipe/framework/formats/image.h"
-#include "mediapipe/framework/formats/rect.pb.h"
-#include "mediapipe/tasks/cc/components/containers/proto/embeddings.pb.h"
-#include "mediapipe/tasks/cc/components/embedder_options.h"
+#include "mediapipe/tasks/cc/components/containers/embedding_result.h"
+#include "mediapipe/tasks/cc/components/processors/embedder_options.h"
 #include "mediapipe/tasks/cc/core/base_options.h"
 #include "mediapipe/tasks/cc/vision/core/base_vision_task_api.h"
+#include "mediapipe/tasks/cc/vision/core/image_processing_options.h"
 #include "mediapipe/tasks/cc/vision/core/running_mode.h"
 
 namespace mediapipe {
 namespace tasks {
 namespace vision {
 namespace image_embedder {
+
+// Alias the shared EmbeddingResult struct as result typo.
+using ImageEmbedderResult =
+    ::mediapipe::tasks::components::containers::EmbeddingResult;
 
 // The options for configuring a MediaPipe image embedder task.
 struct ImageEmbedderOptions {
@@ -50,14 +54,12 @@ struct ImageEmbedderOptions {
 
   // Options for configuring the embedder behavior, such as L2-normalization or
   // scalar-quantization.
-  components::EmbedderOptions embedder_options;
+  components::processors::EmbedderOptions embedder_options;
 
   // The user-defined result callback for processing live stream data.
   // The result callback should only be specified when the running mode is set
   // to RunningMode::LIVE_STREAM.
-  std::function<void(
-      absl::StatusOr<components::containers::proto::EmbeddingResult>,
-      const Image&, int64)>
+  std::function<void(absl::StatusOr<ImageEmbedderResult>, const Image&, int64)>
       result_callback = nullptr;
 };
 
@@ -88,21 +90,38 @@ class ImageEmbedder : core::BaseVisionTaskApi {
   static absl::StatusOr<std::unique_ptr<ImageEmbedder>> Create(
       std::unique_ptr<ImageEmbedderOptions> options);
 
-  // Performs embedding extraction on the provided single image. Extraction
-  // is performed on the region of interest specified by the `roi` argument if
-  // provided, or on the entire image otherwise.
+  // Performs embedding extraction on the provided single image.
+  //
+  // The optional 'image_processing_options' parameter can be used to specify:
+  // - the rotation to apply to the image before performing embedding
+  //   extraction, by setting its 'rotation_degrees' field.
+  // and/or
+  // - the region-of-interest on which to perform embedding extraction, by
+  //   setting its 'region_of_interest' field. If not specified, the full image
+  //   is used.
+  // If both are specified, the crop around the region-of-interest is extracted
+  // first, then the specified rotation is applied to the crop.
   //
   // Only use this method when the ImageEmbedder is created with the image
   // running mode.
   //
   // The image can be of any size with format RGB or RGBA.
-  absl::StatusOr<components::containers::proto::EmbeddingResult> Embed(
+  absl::StatusOr<ImageEmbedderResult> Embed(
       mediapipe::Image image,
-      std::optional<mediapipe::NormalizedRect> roi = std::nullopt);
+      std::optional<core::ImageProcessingOptions> image_processing_options =
+          std::nullopt);
 
-  // Performs embedding extraction on the provided video frame. Extraction
-  // is performed on the region of interested specified by the `roi` argument if
-  // provided, or on the entire image otherwise.
+  // Performs embedding extraction on the provided video frame.
+  //
+  // The optional 'image_processing_options' parameter can be used to specify:
+  // - the rotation to apply to the image before performing embedding
+  //   extraction, by setting its 'rotation_degrees' field.
+  // and/or
+  // - the region-of-interest on which to perform embedding extraction, by
+  //   setting its 'region_of_interest' field. If not specified, the full image
+  //   is used.
+  // If both are specified, the crop around the region-of-interest is extracted
+  // first, then the specified rotation is applied to the crop.
   //
   // Only use this method when the ImageEmbedder is created with the video
   // running mode.
@@ -110,14 +129,23 @@ class ImageEmbedder : core::BaseVisionTaskApi {
   // The image can be of any size with format RGB or RGBA. It's required to
   // provide the video frame's timestamp (in milliseconds). The input timestamps
   // must be monotonically increasing.
-  absl::StatusOr<components::containers::proto::EmbeddingResult> EmbedForVideo(
+  absl::StatusOr<ImageEmbedderResult> EmbedForVideo(
       mediapipe::Image image, int64 timestamp_ms,
-      std::optional<mediapipe::NormalizedRect> roi = std::nullopt);
+      std::optional<core::ImageProcessingOptions> image_processing_options =
+          std::nullopt);
 
   // Sends live image data to embedder, and the results will be available via
-  // the "result_callback" provided in the ImageEmbedderOptions. Embedding
-  // extraction is performed on the region of interested specified by the `roi`
-  // argument if provided, or on the entire image otherwise.
+  // the "result_callback" provided in the ImageEmbedderOptions.
+  //
+  // The optional 'image_processing_options' parameter can be used to specify:
+  // - the rotation to apply to the image before performing embedding
+  //   extraction, by setting its 'rotation_degrees' field.
+  // and/or
+  // - the region-of-interest on which to perform embedding extraction, by
+  //   setting its 'region_of_interest' field. If not specified, the full image
+  //   is used.
+  // If both are specified, the crop around the region-of-interest is extracted
+  // first, then the specified rotation is applied to the crop.
   //
   // Only use this method when the ImageEmbedder is created with the live
   // stream running mode.
@@ -135,22 +163,22 @@ class ImageEmbedder : core::BaseVisionTaskApi {
   //     longer be valid when the callback returns. To access the image data
   //     outside of the callback, callers need to make a copy of the image.
   //   - The input timestamp in milliseconds.
-  absl::Status EmbedAsync(
-      mediapipe::Image image, int64 timestamp_ms,
-      std::optional<mediapipe::NormalizedRect> roi = std::nullopt);
+  absl::Status EmbedAsync(mediapipe::Image image, int64 timestamp_ms,
+                          std::optional<core::ImageProcessingOptions>
+                              image_processing_options = std::nullopt);
 
   // Shuts down the ImageEmbedder when all works are done.
   absl::Status Close() { return runner_->Close(); }
 
-  // Utility function to compute cosine similarity [1] between two embedding
-  // entries. May return an InvalidArgumentError if e.g. the feature vectors are
-  // of different types (quantized vs. float), have different sizes, or have a
-  // an L2-norm of 0.
+  // Utility function to compute cosine similarity [1] between two embeddings.
+  // May return an InvalidArgumentError if e.g. the embeddings are of different
+  // types (quantized vs. float), have different sizes, or have a an L2-norm of
+  // 0.
   //
   // [1]: https://en.wikipedia.org/wiki/Cosine_similarity
   static absl::StatusOr<double> CosineSimilarity(
-      const components::containers::proto::EmbeddingEntry& u,
-      const components::containers::proto::EmbeddingEntry& v);
+      const components::containers::Embedding& u,
+      const components::containers::Embedding& v);
 };
 
 }  // namespace image_embedder

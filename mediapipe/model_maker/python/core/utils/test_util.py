@@ -46,6 +46,24 @@ def create_dataset(data_size: int,
   return dataset
 
 
+def create_random_sample(size: Union[int, List[int]],
+                         low: float = 0,
+                         high: float = 1) -> np.ndarray:
+  """Creates and returns a random sample with floating point values.
+
+  Args:
+    size: Size of the output multi-dimensional array.
+    low: Lower boundary of the output values.
+    high: Higher boundary of the output values.
+
+  Returns:
+    1D array if the size is scalar. Otherwise, N-D array whose dimension equals
+    input size.
+  """
+  np.random.seed(0)
+  return np.random.uniform(low=low, high=high, size=size).astype(np.float32)
+
+
 def build_model(input_shape: List[int], num_classes: int) -> tf.keras.Model:
   """Builds a simple Keras model for test."""
   inputs = tf.keras.layers.Input(shape=input_shape)
@@ -61,16 +79,69 @@ def build_model(input_shape: List[int], num_classes: int) -> tf.keras.Model:
   return model
 
 
-def is_same_output(tflite_file: str,
+def is_same_output(tflite_model: bytearray,
                    keras_model: tf.keras.Model,
                    input_tensors: Union[List[tf.Tensor], tf.Tensor],
                    atol: float = 1e-04) -> bool:
   """Returns if the output of TFLite model and keras model are identical."""
   # Gets output from lite model.
-  lite_runner = model_util.get_lite_runner(tflite_file)
+  lite_runner = model_util.get_lite_runner(tflite_model)
   lite_output = lite_runner.run(input_tensors)
 
   # Gets output from keras model.
   keras_output = keras_model.predict_on_batch(input_tensors)
 
   return np.allclose(lite_output, keras_output, atol=atol)
+
+
+def test_tflite(keras_model: tf.keras.Model,
+                tflite_model: bytearray,
+                size: Union[int, List[int]],
+                high: float = 1,
+                atol: float = 1e-04) -> bool:
+  """Verifies if the output of TFLite model and TF Keras model are identical.
+
+  Args:
+    keras_model: Input TensorFlow Keras model.
+    tflite_model: Input TFLite model flatbuffer.
+    size: Size of the input tesnor.
+    high: Higher boundary of the values in input tensors.
+    atol: Absolute tolerance of the difference between the outputs of Keras
+      model and TFLite model.
+
+  Returns:
+    True if the output of TFLite model and TF Keras model are identical.
+    Otherwise, False.
+  """
+  random_input = create_random_sample(size=size, high=high)
+  random_input = tf.convert_to_tensor(random_input)
+
+  return is_same_output(
+      tflite_model=tflite_model,
+      keras_model=keras_model,
+      input_tensors=random_input,
+      atol=atol)
+
+
+def test_tflite_file(keras_model: tf.keras.Model,
+                     tflite_file: bytearray,
+                     size: Union[int, List[int]],
+                     high: float = 1,
+                     atol: float = 1e-04) -> bool:
+  """Verifies if the output of TFLite model and TF Keras model are identical.
+
+  Args:
+    keras_model: Input TensorFlow Keras model.
+    tflite_file: Input TFLite model file.
+    size: Size of the input tesnor.
+    high: Higher boundary of the values in input tensors.
+    atol: Absolute tolerance of the difference between the outputs of Keras
+      model and TFLite model.
+
+  Returns:
+    True if the output of TFLite model and TF Keras model are identical.
+    Otherwise, False.
+  """
+  with tf.io.gfile.GFile(tflite_file, "rb") as f:
+    tflite_model = f.read()
+  return test_tflite(keras_model, tflite_model, size, high, atol)
