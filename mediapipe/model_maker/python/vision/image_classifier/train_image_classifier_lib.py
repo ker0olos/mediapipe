@@ -14,8 +14,6 @@
 """Library to train model."""
 
 import os
-from typing import List
-
 import tensorflow as tf
 
 from mediapipe.model_maker.python.core.utils import model_util
@@ -47,19 +45,6 @@ def _create_optimizer(init_lr: float, decay_steps: int,
       learning_rate=learning_rate_fn, rho=0.9, momentum=0.9, epsilon=0.001)
 
   return optimizer
-
-
-def _get_default_callbacks(
-    export_dir: str) -> List[tf.keras.callbacks.Callback]:
-  """Gets default callbacks."""
-  summary_dir = os.path.join(export_dir, 'summaries')
-  summary_callback = tf.keras.callbacks.TensorBoard(summary_dir)
-  # Save checkpoint every 20 epochs.
-
-  checkpoint_path = os.path.join(export_dir, 'checkpoint')
-  checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-      checkpoint_path, save_weights_only=True, period=20)
-  return [summary_callback, checkpoint_callback]
 
 
 def train_model(model: tf.keras.Model, hparams: hp.HParams,
@@ -94,11 +79,24 @@ def train_model(model: tf.keras.Model, hparams: hp.HParams,
   loss = tf.keras.losses.CategoricalCrossentropy(
       label_smoothing=hparams.label_smoothing)
   model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
-  callbacks = _get_default_callbacks(export_dir=hparams.export_dir)
+
+  summary_dir = os.path.join(hparams.export_dir, 'summaries')
+  summary_callback = tf.keras.callbacks.TensorBoard(summary_dir)
+  # Save checkpoint every 5 epochs.
+  checkpoint_path = os.path.join(hparams.export_dir, 'checkpoint')
+  checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+      os.path.join(checkpoint_path, 'model-{epoch:04d}'),
+      save_weights_only=True,
+      period=5)
+
+  latest_checkpoint = tf.train.latest_checkpoint(checkpoint_path)
+  if latest_checkpoint:
+    print(f'Resuming from {latest_checkpoint}')
+    model.load_weights(latest_checkpoint)
 
   # Train the model.
   return model.fit(
       x=train_ds,
       epochs=hparams.epochs,
       validation_data=validation_ds,
-      callbacks=callbacks)
+      callbacks=[summary_callback, checkpoint_callback])

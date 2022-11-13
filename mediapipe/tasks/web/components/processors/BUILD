@@ -17,8 +17,9 @@ mediapipe_ts_library(
     name = "classifier_result",
     srcs = ["classifier_result.ts"],
     deps = [
+        "//mediapipe/framework/formats:classification_jspb_proto",
         "//mediapipe/tasks/cc/components/containers/proto:classifications_jspb_proto",
-        "//mediapipe/tasks/web/components/containers:classifications",
+        "//mediapipe/tasks/web/components/containers:classification_result",
     ],
 )
 
@@ -26,6 +27,8 @@ mediapipe_ts_library(
     name = "base_options",
     srcs = ["base_options.ts"],
     deps = [
+        "//mediapipe/calculators/tensor:inference_calculator_jspb_proto",
+        "//mediapipe/tasks/cc/core/proto:acceleration_jspb_proto",
         "//mediapipe/tasks/cc/core/proto:base_options_jspb_proto",
         "//mediapipe/tasks/cc/core/proto:external_file_jspb_proto",
         "//mediapipe/tasks/web/core",

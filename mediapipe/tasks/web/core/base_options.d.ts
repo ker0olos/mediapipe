@@ -17,15 +17,19 @@
 // Placeholder for internal dependency on trusted resource url
 
 /** Options to configure MediaPipe Tasks in general. */
-export interface BaseOptions {
+export declare interface BaseOptions {
   /**
    * The model path to the model asset file. Only one of `modelAssetPath` or
    * `modelAssetBuffer` can be set.
    */
-  modelAssetPath?: string;
+  modelAssetPath?: string|undefined;
+
   /**
    * A buffer containing the model aaset. Only one of `modelAssetPath` or
    * `modelAssetBuffer` can be set.
    */
-  modelAssetBuffer?: Uint8Array;
+  modelAssetBuffer?: Uint8Array|undefined;
+
+  /** Overrides the default backend to use for the provided model. */
+  delegate?: 'cpu'|'gpu'|undefined;
 }

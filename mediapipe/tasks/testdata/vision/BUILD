@@ -143,15 +143,6 @@ filegroup(
     ],
 )
 
-# Gestures related models. Visible to model_maker.
-filegroup(
-    name = "test_gesture_models",
-    visibility = [
-        "//mediapipe/model_maker:__subpackages__",
-        "//mediapipe/tasks:internal",
-    ],
-)
-
 filegroup(
     name = "test_protos",
     srcs = [

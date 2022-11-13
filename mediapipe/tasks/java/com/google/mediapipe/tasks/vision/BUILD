@@ -84,8 +84,8 @@ android_library(
 android_library(
     name = "imageclassifier",
     srcs = [
-        "imageclassifier/ImageClassificationResult.java",
         "imageclassifier/ImageClassifier.java",
+        "imageclassifier/ImageClassifierResult.java",
     ],
     javacopts = [
         "-Xep:AndroidJdkLibsChecker:OFF",
@@ -100,9 +100,7 @@ android_library(
         "//mediapipe/tasks/cc/components/containers/proto:classifications_java_proto_lite",
         "//mediapipe/tasks/cc/core/proto:base_options_java_proto_lite",
         "//mediapipe/tasks/cc/vision/image_classifier/proto:image_classifier_graph_options_java_proto_lite",
-        "//mediapipe/tasks/java/com/google/mediapipe/tasks/components/containers:category",
-        "//mediapipe/tasks/java/com/google/mediapipe/tasks/components/containers:classification_entry",
-        "//mediapipe/tasks/java/com/google/mediapipe/tasks/components/containers:classifications",
+        "//mediapipe/tasks/java/com/google/mediapipe/tasks/components/containers:classificationresult",
         "//mediapipe/tasks/java/com/google/mediapipe/tasks/components/processors:classifieroptions",
         "//mediapipe/tasks/java/com/google/mediapipe/tasks/core",
         "//third_party:autovalue",
@@ -113,8 +111,8 @@ android_library(
 android_library(
     name = "gesturerecognizer",
     srcs = [
-        "gesturerecognizer/GestureRecognitionResult.java",
         "gesturerecognizer/GestureRecognizer.java",
+        "gesturerecognizer/GestureRecognizerResult.java",
     ],
     javacopts = [
         "-Xep:AndroidJdkLibsChecker:OFF",
@@ -138,6 +136,36 @@ android_library(
         "//mediapipe/tasks/java/com/google/mediapipe/tasks/components/containers:category",
         "//mediapipe/tasks/java/com/google/mediapipe/tasks/components/containers:landmark",
         "//mediapipe/tasks/java/com/google/mediapipe/tasks/components/processors:classifieroptions",
+        "//mediapipe/tasks/java/com/google/mediapipe/tasks/core",
+        "//third_party:autovalue",
+        "@maven//:com_google_guava_guava",
+    ],
+)
+
+android_library(
+    name = "handlandmarker",
+    srcs = [
+        "handlandmarker/HandLandmarker.java",
+        "handlandmarker/HandLandmarkerResult.java",
+    ],
+    javacopts = [
+        "-Xep:AndroidJdkLibsChecker:OFF",
+    ],
+    manifest = "handlandmarker/AndroidManifest.xml",
+    deps = [
+        ":core",
+        "//mediapipe/framework:calculator_options_java_proto_lite",
+        "//mediapipe/framework/formats:classification_java_proto_lite",
+        "//mediapipe/framework/formats:landmark_java_proto_lite",
+        "//mediapipe/java/com/google/mediapipe/framework:android_framework",
+        "//mediapipe/java/com/google/mediapipe/framework/image",
+        "//mediapipe/tasks/cc/components/processors/proto:classifier_options_java_proto_lite",
+        "//mediapipe/tasks/cc/core/proto:base_options_java_proto_lite",
+        "//mediapipe/tasks/cc/vision/hand_detector/proto:hand_detector_graph_options_java_proto_lite",
+        "//mediapipe/tasks/cc/vision/hand_landmarker/proto:hand_landmarker_graph_options_java_proto_lite",
+        "//mediapipe/tasks/cc/vision/hand_landmarker/proto:hand_landmarks_detector_graph_options_java_proto_lite",
+        "//mediapipe/tasks/java/com/google/mediapipe/tasks/components/containers:category",
+        "//mediapipe/tasks/java/com/google/mediapipe/tasks/components/containers:landmark",
         "//mediapipe/tasks/java/com/google/mediapipe/tasks/core",
         "//third_party:autovalue",
         "@maven//:com_google_guava_guava",

@@ -13,8 +13,8 @@ mediapipe_ts_library(
     name = "text_classifier",
     srcs = [
         "text_classifier.ts",
-        "text_classifier_options.d.ts",
-        "text_classifier_result.d.ts",
+        "text_classifier_options.ts",
+        "text_classifier_result.ts",
     ],
     deps = [
         "//mediapipe/framework:calculator_jspb_proto",
@@ -22,7 +22,7 @@ mediapipe_ts_library(
         "//mediapipe/tasks/cc/components/containers/proto:classifications_jspb_proto",
         "//mediapipe/tasks/cc/text/text_classifier/proto:text_classifier_graph_options_jspb_proto",
         "//mediapipe/tasks/web/components/containers:category",
-        "//mediapipe/tasks/web/components/containers:classifications",
+        "//mediapipe/tasks/web/components/containers:classification_result",
         "//mediapipe/tasks/web/components/processors:base_options",
         "//mediapipe/tasks/web/components/processors:classifier_options",
         "//mediapipe/tasks/web/components/processors:classifier_result",

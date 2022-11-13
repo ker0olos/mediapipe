@@ -19,7 +19,7 @@ import csv
 import dataclasses
 import os
 import tempfile
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import flatbuffers
 from mediapipe.tasks.metadata import metadata_schema_py_generated as metadata_fb
@@ -29,6 +29,9 @@ from mediapipe.tasks.python.metadata.metadata_writers import writer_utils
 
 _INPUT_IMAGE_NAME = 'image'
 _INPUT_IMAGE_DESCRIPTION = 'Input image to be processed.'
+_INPUT_REGEX_TEXT_NAME = 'input_text'
+_INPUT_REGEX_TEXT_DESCRIPTION = ('Embedding vectors representing the input '
+                                 'text to be processed.')
 _OUTPUT_CLASSIFICATION_NAME = 'score'
 _OUTPUT_CLASSIFICATION_DESCRIPTION = 'Score of the labels respectively.'
 
@@ -80,6 +83,50 @@ class ScoreThresholding:
     https://github.com/google/mediapipe/blob/f8af41b1eb49ff4bdad756ff19d1d36f486be614/mediapipe/tasks/metadata/metadata_schema.fbs#L468
   """
   global_score_threshold: float
+
+
+@dataclasses.dataclass
+class RegexTokenizer:
+  """Parameters of the Regex tokenizer [1] metadata information.
+
+  [1]:
+    https://github.com/google/mediapipe/blob/f8af41b1eb49ff4bdad756ff19d1d36f486be614/mediapipe/tasks/metadata/metadata_schema.fbs#L500
+
+  Attributes:
+    delim_regex_pattern: the regular expression to segment strings and create
+      tokens.
+    vocab_file_path: path to the vocabulary file.
+  """
+  delim_regex_pattern: str
+  vocab_file_path: str
+
+
+@dataclasses.dataclass
+class BertTokenizer:
+  """Parameters of the Bert tokenizer [1] metadata information.
+
+  [1]:
+    https://github.com/google/mediapipe/blob/f8af41b1eb49ff4bdad756ff19d1d36f486be614/mediapipe/tasks/metadata/metadata_schema.fbs#L477
+
+  Attributes:
+    vocab_file_path: path to the vocabulary file.
+  """
+  vocab_file_path: str
+
+
+@dataclasses.dataclass
+class SentencePieceTokenizer:
+  """Parameters of the sentence piece tokenizer tokenizer [1] metadata information.
+
+  [1]:
+    https://github.com/google/mediapipe/blob/f8af41b1eb49ff4bdad756ff19d1d36f486be614/mediapipe/tasks/metadata/metadata_schema.fbs#L485
+
+  Attributes:
+    sentence_piece_model_path: path to the sentence piece model file.
+    vocab_file_path: path to the vocabulary file.
+  """
+  sentence_piece_model_path: str
+  vocab_file_path: Optional[str] = None
 
 
 class Labels(object):
@@ -263,7 +310,9 @@ def _create_metadata_buffer(
     model_buffer: bytearray,
     general_md: Optional[metadata_info.GeneralMd] = None,
     input_md: Optional[List[metadata_info.TensorMd]] = None,
-    output_md: Optional[List[metadata_info.TensorMd]] = None) -> bytearray:
+    output_md: Optional[List[metadata_info.TensorMd]] = None,
+    input_process_units: Optional[List[metadata_fb.ProcessUnitT]] = None
+) -> bytearray:
   """Creates a buffer of the metadata.
 
   Args:
@@ -271,7 +320,9 @@ def _create_metadata_buffer(
     general_md: general information about the model.
     input_md: metadata information of the input tensors.
     output_md: metadata information of the output tensors.
-
+    input_process_units: a lists of metadata of the input process units [1].
+    [1]:
+      https://github.com/google/mediapipe/blob/f8af41b1eb49ff4bdad756ff19d1d36f486be614/mediapipe/tasks/metadata/metadata_schema.fbs#L655
   Returns:
     A buffer of the metadata.
 
@@ -306,6 +357,8 @@ def _create_metadata_buffer(
   subgraph_metadata = metadata_fb.SubGraphMetadataT()
   subgraph_metadata.inputTensorMetadata = input_metadata
   subgraph_metadata.outputTensorMetadata = output_metadata
+  if input_process_units:
+    subgraph_metadata.inputProcessUnits = input_process_units
 
   # Create the whole model metadata.
   if general_md is None:
@@ -347,6 +400,7 @@ class MetadataWriter(object):
     self._model_buffer = model_buffer
     self._general_md = None
     self._input_mds = []
+    self._input_process_units = []
     self._output_mds = []
     self._associated_files = []
     self._temp_folder = tempfile.TemporaryDirectory()
@@ -355,11 +409,11 @@ class MetadataWriter(object):
     if os.path.exists(self._temp_folder.name):
       self._temp_folder.cleanup()
 
-  def add_genernal_info(
+  def add_general_info(
       self,
       model_name: str,
       model_description: Optional[str] = None) -> 'MetadataWriter':
-    """Adds a genernal info metadata for the general metadata informantion."""
+    """Adds a general info metadata for the general metadata informantion."""
     # Will overwrite the previous `self._general_md` if exists.
     self._general_md = metadata_info.GeneralMd(
         name=model_name, description=model_description)
@@ -397,7 +451,7 @@ class MetadataWriter(object):
       description: Description of the input tensor.
 
     Returns:
-      The MetaWriter instance, can be used for chained operation.
+      The MetadataWriter instance, can be used for chained operation.
 
     [1]:
       https://github.com/google/mediapipe/blob/f8af41b1eb49ff4bdad756ff19d1d36f486be614/mediapipe/tasks/metadata/metadata_schema.fbs#L389
@@ -413,6 +467,91 @@ class MetadataWriter(object):
         tensor_type=self._input_tensor_type(len(self._input_mds)))
 
     self._input_mds.append(input_md)
+    return self
+
+  def add_regex_text_input(
+      self,
+      regex_tokenizer: RegexTokenizer,
+      name: str = _INPUT_REGEX_TEXT_NAME,
+      description: str = _INPUT_REGEX_TEXT_DESCRIPTION) -> 'MetadataWriter':
+    """Adds an input text metadata for the text input with regex tokenizer.
+
+    Args:
+      regex_tokenizer: information of the regex tokenizer [1] used to process
+        the input string.
+      name: Name of the input tensor.
+      description: Description of the input tensor.
+
+    Returns:
+      The MetadataWriter instance, can be used for chained operation.
+
+    [1]:
+      https://github.com/google/mediapipe/blob/f8af41b1eb49ff4bdad756ff19d1d36f486be614/mediapipe/tasks/metadata/metadata_schema.fbs#L500
+    """
+    tokenizer_md = metadata_info.RegexTokenizerMd(
+        delim_regex_pattern=regex_tokenizer.delim_regex_pattern,
+        vocab_file_path=regex_tokenizer.vocab_file_path)
+    input_md = metadata_info.InputTextTensorMd(
+        name=name, description=description, tokenizer_md=tokenizer_md)
+    self._input_mds.append(input_md)
+    self._associated_files.append(regex_tokenizer.vocab_file_path)
+    return self
+
+  def add_bert_text_input(self, tokenizer: Union[BertTokenizer,
+                                                 SentencePieceTokenizer],
+                          ids_name: str, mask_name: str,
+                          segment_name: str) -> 'MetadataWriter':
+    """Adds an metadata for the text input with bert / sentencepiece tokenizer.
+
+    `ids_name`, `mask_name`, and `segment_name` correspond to the `Tensor.name`
+    in the TFLite schema, which help to determine the tensor order when
+    populating metadata.
+
+    Args:
+      tokenizer: information of the tokenizer used to process the input string,
+        if any. Supported tokenziers are: `BertTokenizer` [1] and
+        `SentencePieceTokenizer` [2].
+      ids_name: name of the ids tensor, which represents the tokenized ids of
+        the input text.
+      mask_name: name of the mask tensor, which represents the mask with `1` for
+        real tokens and `0` for padding tokens.
+      segment_name: name of the segment ids tensor, where `0` stands for the
+        first sequence, and `1` stands for the second sequence if exists.
+
+    Returns:
+      The MetadataWriter instance, can be used for chained operation.
+
+    Raises:
+      ValueError: if the type tokenizer is not BertTokenizer or
+        SentencePieceTokenizer.
+
+    [1]:
+      https://github.com/google/mediapipe/blob/f8af41b1eb49ff4bdad756ff19d1d36f486be614/mediapipe/tasks/metadata/metadata_schema.fbs#L477
+    [2]:
+      https://github.com/google/mediapipe/blob/f8af41b1eb49ff4bdad756ff19d1d36f486be614/mediapipe/tasks/metadata/metadata_schema.fbs#L485
+    """
+    if isinstance(tokenizer, BertTokenizer):
+      tokenizer_md = metadata_info.BertTokenizerMd(
+          vocab_file_path=tokenizer.vocab_file_path)
+    elif isinstance(tokenizer, SentencePieceTokenizer):
+      tokenizer_md = metadata_info.SentencePieceTokenizerMd(
+          sentence_piece_model_path=tokenizer.sentence_piece_model_path,
+          vocab_file_path=tokenizer.vocab_file_path)
+    else:
+      raise ValueError(
+          f'The type of tokenizer, {type(tokenizer)}, is unsupported')
+    bert_input_md = metadata_info.BertInputTensorsMd(
+        self._model_buffer,
+        ids_name,
+        mask_name,
+        segment_name,
+        tokenizer_md=tokenizer_md)
+
+    self._input_mds.extend(bert_input_md.input_md)
+    self._associated_files.extend(
+        bert_input_md.get_tokenizer_associated_files())
+    self._input_process_units.extend(
+        bert_input_md.create_input_process_unit_metadata())
     return self
 
   def add_classification_output(
@@ -499,7 +638,8 @@ class MetadataWriter(object):
         model_buffer=self._model_buffer,
         general_md=self._general_md,
         input_md=self._input_mds,
-        output_md=self._output_mds)
+        output_md=self._output_mds,
+        input_process_units=self._input_process_units)
     populator.load_metadata_buffer(metadata_buffer)
     if self._associated_files:
       populator.load_associated_files(self._associated_files)

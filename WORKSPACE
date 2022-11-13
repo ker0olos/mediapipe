@@ -155,6 +155,7 @@ http_archive(
     name = "com_google_audio_tools",
     strip_prefix = "multichannel-audio-tools-master",
     urls = ["https://github.com/google/multichannel-audio-tools/archive/master.zip"],
+    repo_mapping = {"@com_github_glog_glog" : "@com_github_glog_glog_no_gflags"},
 )
 
 http_archive(
@@ -176,7 +177,7 @@ http_archive(
         "//third_party:com_google_sentencepiece_no_gflag_no_gtest.diff",
     ],
     patch_args = ["-p1"],
-    repo_mapping = {"@com_google_glog" : "@com_github_glog_glog"},
+    repo_mapping = {"@com_google_glog" : "@com_github_glog_glog_no_gflags"},
 )
 
 http_archive(
@@ -546,3 +547,6 @@ rules_proto_toolchains()
 
 load("//third_party:external_files.bzl", "external_files")
 external_files()
+
+load("//third_party:wasm_files.bzl", "wasm_files")
+wasm_files()

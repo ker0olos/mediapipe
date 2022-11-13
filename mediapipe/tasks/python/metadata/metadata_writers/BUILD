@@ -12,9 +12,9 @@ py_library(
     srcs = [
         "metadata_info.py",
     ],
-    srcs_version = "PY3",
     visibility = ["//visibility:public"],
     deps = [
+        ":writer_utils",
         "//mediapipe/tasks/metadata:metadata_schema_py",
         "//mediapipe/tasks/metadata:schema_py",
     ],
@@ -41,5 +41,11 @@ py_library(
 py_library(
     name = "image_classifier",
     srcs = ["image_classifier.py"],
+    deps = [":metadata_writer"],
+)
+
+py_library(
+    name = "text_classifier",
+    srcs = ["text_classifier.py"],
     deps = [":metadata_writer"],
 )

@@ -17,9 +17,19 @@ package(default_visibility = ["//mediapipe/tasks:internal"])
 licenses(["notice"])
 
 android_library(
+    name = "audiodata",
+    srcs = ["AudioData.java"],
+    deps = [
+        "//third_party:autovalue",
+        "@maven//:com_google_guava_guava",
+    ],
+)
+
+android_library(
     name = "category",
     srcs = ["Category.java"],
     deps = [
+        "//mediapipe/framework/formats:classification_java_proto_lite",
         "//third_party:autovalue",
         "@maven//:com_google_guava_guava",
     ],
@@ -36,20 +46,29 @@ android_library(
 )
 
 android_library(
-    name = "classification_entry",
-    srcs = ["ClassificationEntry.java"],
+    name = "classifications",
+    srcs = ["Classifications.java"],
+    javacopts = [
+        "-Xep:AndroidJdkLibsChecker:OFF",
+    ],
     deps = [
         ":category",
+        "//mediapipe/framework/formats:classification_java_proto_lite",
+        "//mediapipe/tasks/cc/components/containers/proto:classifications_java_proto_lite",
         "//third_party:autovalue",
         "@maven//:com_google_guava_guava",
     ],
 )
 
 android_library(
-    name = "classifications",
-    srcs = ["Classifications.java"],
+    name = "classificationresult",
+    srcs = ["ClassificationResult.java"],
+    javacopts = [
+        "-Xep:AndroidJdkLibsChecker:OFF",
+    ],
     deps = [
-        ":classification_entry",
+        ":classifications",
+        "//mediapipe/tasks/cc/components/containers/proto:classifications_java_proto_lite",
         "//third_party:autovalue",
         "@maven//:com_google_guava_guava",
     ],
@@ -69,4 +88,31 @@ filegroup(
     name = "java_src",
     srcs = glob(["*.java"]),
     visibility = ["//mediapipe/tasks/java/com/google/mediapipe/tasks/core:__subpackages__"],
+)
+
+android_library(
+    name = "embedding",
+    srcs = ["Embedding.java"],
+    javacopts = [
+        "-Xep:AndroidJdkLibsChecker:OFF",
+    ],
+    deps = [
+        "//mediapipe/tasks/cc/components/containers/proto:embeddings_java_proto_lite",
+        "//third_party:autovalue",
+        "@maven//:com_google_guava_guava",
+    ],
+)
+
+android_library(
+    name = "embeddingresult",
+    srcs = ["EmbeddingResult.java"],
+    javacopts = [
+        "-Xep:AndroidJdkLibsChecker:OFF",
+    ],
+    deps = [
+        ":embedding",
+        "//mediapipe/tasks/cc/components/containers/proto:embeddings_java_proto_lite",
+        "//third_party:autovalue",
+        "@maven//:com_google_guava_guava",
+    ],
 )
