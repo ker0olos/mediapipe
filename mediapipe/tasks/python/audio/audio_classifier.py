@@ -70,7 +70,8 @@ class AudioClassifierOptions:
   """
   base_options: _BaseOptions
   running_mode: _RunningMode = _RunningMode.AUDIO_CLIPS
-  classifier_options: _ClassifierOptions = _ClassifierOptions()
+  classifier_options: Optional[_ClassifierOptions] = dataclasses.field(
+      default_factory=_ClassifierOptions)
   result_callback: Optional[Callable[[AudioClassifierResult, int], None]] = None
 
   @doc_controls.do_not_generate_docs
@@ -86,7 +87,30 @@ class AudioClassifierOptions:
 
 
 class AudioClassifier(base_audio_task_api.BaseAudioTaskApi):
-  """Class that performs audio classification on audio data."""
+  """Class that performs audio classification on audio data.
+
+  This API expects a TFLite model with mandatory TFLite Model Metadata that
+  contains the mandatory AudioProperties of the solo input audio tensor and the
+  optional (but recommended) category labels as AssociatedFiles with type
+  TENSOR_AXIS_LABELS per output classification tensor.
+
+  Input tensor:
+    (kTfLiteFloat32)
+    - input audio buffer of size `[batch * samples]`.
+    - batch inference is not supported (`batch` is required to be 1).
+    - for multi-channel models, the channels must be interleaved.
+  At least one output tensor with:
+    (kTfLiteFloat32)
+    - `[1 x N]` array with `N` represents the number of categories.
+    - optional (but recommended) category labels as AssociatedFiles with type
+      TENSOR_AXIS_LABELS, containing one label per line. The first such
+      AssociatedFile (if any) is used to fill the `category_name` field of the
+      results. The `display_name` field is filled from the AssociatedFile (if
+      any) whose locale matches the `display_names_locale` field of the
+      `AudioClassifierOptions` used at creation time ("en" by default, i.e.
+      English). If none of these are available, only the `index` field of the
+      results will be filled.
+  """
 
   @classmethod
   def create_from_model_path(cls, model_path: str) -> 'AudioClassifier':
@@ -257,7 +281,7 @@ class AudioClassifier(base_audio_task_api.BaseAudioTaskApi):
     Raises:
       ValueError: If any of the followings:
         1) The sample rate is not provided in the `AudioData` object or the
-        provided sample rate is inconsisent with the previously recevied.
+        provided sample rate is inconsistent with the previously received.
         2) The current input timestamp is smaller than what the audio
         classifier has already processed.
     """
@@ -270,7 +294,7 @@ class AudioClassifier(base_audio_task_api.BaseAudioTaskApi):
     elif audio_block.audio_format.sample_rate != self._default_sample_rate:
       raise ValueError(
           f'The audio sample rate provided in audio data: '
-          f'{audio_block.audio_format.sample_rate} is inconsisent with '
+          f'{audio_block.audio_format.sample_rate} is inconsistent with '
           f'the previously received: {self._default_sample_rate}.')
 
     self._send_audio_stream_data({

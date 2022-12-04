@@ -14,6 +14,7 @@
 """MediaPipe text classifier task."""
 
 import dataclasses
+from typing import Optional
 
 from mediapipe.python import packet_creator
 from mediapipe.python import packet_getter
@@ -48,7 +49,8 @@ class TextClassifierOptions:
     classifier_options: Options for the text classification task.
   """
   base_options: _BaseOptions
-  classifier_options: _ClassifierOptions = _ClassifierOptions()
+  classifier_options: Optional[_ClassifierOptions] = dataclasses.field(
+      default_factory=_ClassifierOptions)
 
   @doc_controls.do_not_generate_docs
   def to_pb2(self) -> _TextClassifierGraphOptionsProto:
@@ -62,7 +64,38 @@ class TextClassifierOptions:
 
 
 class TextClassifier(base_text_task_api.BaseTextTaskApi):
-  """Class that performs classification on text."""
+  """Class that performs classification on text.
+
+  This API expects a TFLite model with (optional) TFLite Model Metadata that
+  contains the mandatory (described below) input tensors, output tensor,
+  and the optional (but recommended) category labels as AssociatedFiles with
+  type
+  TENSOR_AXIS_LABELS per output classification tensor. Metadata is required for
+  models with int32 input tensors because it contains the input process unit
+  for the model's Tokenizer. No metadata is required for models with string
+  input tensors.
+
+  Input tensors:
+    (kTfLiteInt32)
+    - 3 input tensors of size `[batch_size x bert_max_seq_len]` representing
+      the input ids, segment ids, and mask ids
+    - or 1 input tensor of size `[batch_size x max_seq_len]` representing the
+      input ids
+    or (kTfLiteString)
+    - 1 input tensor that is shapeless or has shape [1] containing the input
+      string
+  At least one output tensor with:
+    (kTfLiteFloat32/kBool)
+    - `[1 x N]` array with `N` represents the number of categories.
+    - optional (but recommended) category labels as AssociatedFiles with type
+      TENSOR_AXIS_LABELS, containing one label per line. The first such
+      AssociatedFile (if any) is used to fill the `category_name` field of the
+      results. The `display_name` field is filled from the AssociatedFile (if
+      any) whose locale matches the `display_names_locale` field of the
+      `TextClassifierOptions` used at creation time ("en" by default, i.e.
+      English). If none of these are available, only the `index` field of the
+      results will be filled.
+  """
 
   @classmethod
   def create_from_model_path(cls, model_path: str) -> 'TextClassifier':

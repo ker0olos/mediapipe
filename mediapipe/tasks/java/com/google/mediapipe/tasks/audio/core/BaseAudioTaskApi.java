@@ -91,7 +91,7 @@ public class BaseAudioTaskApi implements AutoCloseable {
    *
    * @param sampleRate the audio sample rate.
    * @throws MediaPipeException if the task is not in the audio stream mode or the provided sample
-   *     rate is inconsisent with the previously recevied.
+   *     rate is inconsistent with the previously received.
    */
   protected void checkOrSetSampleRate(double sampleRate) {
     if (runningMode != RunningMode.AUDIO_STREAM) {
@@ -116,6 +116,7 @@ public class BaseAudioTaskApi implements AutoCloseable {
       defaultSampleRate = sampleRate;
     }
   }
+
   /**
    * An asynchronous method to send audio stream data to the {@link TaskRunner}. The results will be
    * available in the user-defined result listener.
