@@ -28,6 +28,14 @@ cc_library(
     name = "classification_postprocessing_graph",
     srcs = ["classification_postprocessing_graph.cc"],
     hdrs = ["classification_postprocessing_graph.h"],
+    copts = select({
+        # TODO: fix tensor.h not to require this, if possible
+        "//mediapipe:apple": [
+            "-x objective-c++",
+            "-fobjc-arc",  # enable reference-counting
+        ],
+        "//conditions:default": [],
+    }),
     deps = [
         "//mediapipe/calculators/core:split_vector_calculator",
         "//mediapipe/calculators/core:split_vector_calculator_cc_proto",
@@ -140,6 +148,14 @@ cc_library(
     name = "text_preprocessing_graph",
     srcs = ["text_preprocessing_graph.cc"],
     hdrs = ["text_preprocessing_graph.h"],
+    copts = select({
+        # TODO: fix tensor.h not to require this, if possible
+        "//mediapipe:apple": [
+            "-x objective-c++",
+            "-fobjc-arc",  # enable reference-counting
+        ],
+        "//conditions:default": [],
+    }),
     deps = [
         "//mediapipe/calculators/tensor:bert_preprocessor_calculator",
         "//mediapipe/calculators/tensor:bert_preprocessor_calculator_cc_proto",
@@ -150,9 +166,12 @@ cc_library(
         "//mediapipe/framework/api2:builder",
         "//mediapipe/framework/api2:port",
         "//mediapipe/framework/formats:tensor",
+        "//mediapipe/tasks/cc:common",
+        "//mediapipe/tasks/cc/components/processors/proto:text_model_type_cc_proto",
         "//mediapipe/tasks/cc/components/processors/proto:text_preprocessing_graph_options_cc_proto",
         "//mediapipe/tasks/cc/core:model_resources",
         "//mediapipe/tasks/cc/metadata:metadata_extractor",
+        "//mediapipe/tasks/cc/text/utils:text_model_utils",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",

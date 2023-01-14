@@ -15,10 +15,9 @@
  */
 
 import {TaskRunner} from '../../../../tasks/web/core/task_runner';
-import {TaskRunnerOptions} from '../../../../tasks/web/core/task_runner_options';
 
 /** Base class for all MediaPipe Audio Tasks. */
-export abstract class AudioTaskRunner<T> extends TaskRunner<TaskRunnerOptions> {
+export abstract class AudioTaskRunner<T> extends TaskRunner {
   private defaultSampleRate = 48000;
 
   /**
@@ -37,8 +36,11 @@ export abstract class AudioTaskRunner<T> extends TaskRunner<TaskRunnerOptions> {
 
   /** Sends a single audio clip to the graph and awaits results. */
   protected processAudioClip(audioData: Float32Array, sampleRate?: number): T {
+    // Increment the timestamp by 1 millisecond to guarantee that we send
+    // monotonically increasing timestamps to the graph.
+    const syntheticTimestamp = this.getLatestOutputTimestamp() + 1;
     return this.process(
-        audioData, sampleRate ?? this.defaultSampleRate, performance.now());
+        audioData, sampleRate ?? this.defaultSampleRate, syntheticTimestamp);
   }
 }
 

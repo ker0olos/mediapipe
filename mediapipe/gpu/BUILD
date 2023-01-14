@@ -289,7 +289,9 @@ cc_library(
     deps = [
         ":gpu_buffer_format",
         ":gpu_buffer_storage",
+        "@com_google_absl//absl/functional:bind_front",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
         "//mediapipe/framework/formats:image_frame",
         "//mediapipe/framework/port:logging",
         ":gpu_buffer_storage_image_frame",
@@ -472,13 +474,13 @@ objc_library(
     copts = [
         "-Wno-shorten-64-to-32",
     ],
-    sdk_frameworks = [
-        "Accelerate",
-        "CoreGraphics",
-        "CoreVideo",
-    ],
     visibility = ["//visibility:public"],
-    deps = ["//mediapipe/objc:util"],
+    deps = [
+        "//mediapipe/objc:util",
+        "//third_party/apple_frameworks:Accelerate",
+        "//third_party/apple_frameworks:CoreGraphics",
+        "//third_party/apple_frameworks:CoreVideo",
+    ],
 )
 
 objc_library(
@@ -510,13 +512,11 @@ objc_library(
         "-x objective-c++",
         "-Wno-shorten-64-to-32",
     ],
-    sdk_frameworks = [
-        "CoreVideo",
-        "Metal",
-    ],
     visibility = ["//visibility:public"],
     deps = [
         "//mediapipe/objc:mediapipe_framework_ios",
+        "//third_party/apple_frameworks:CoreVideo",
+        "//third_party/apple_frameworks:Metal",
         "@com_google_absl//absl/time",
         "@google_toolbox_for_mac//:GTM_Defines",
     ],
@@ -564,6 +564,7 @@ cc_library(
     name = "gpu_shared_data_internal_stub",
     visibility = ["//visibility:private"],
     deps = [
+        ":gl_context_options_cc_proto",
         ":graph_support",
         "//mediapipe/framework:calculator_context",
         "//mediapipe/framework:calculator_node",
@@ -571,7 +572,6 @@ cc_library(
         "//mediapipe/framework:port",
         "//mediapipe/framework/deps:no_destructor",
         "//mediapipe/framework/port:ret_check",
-        "//mediapipe/gpu:gl_context_options_cc_proto",
     ],
 )
 
@@ -592,7 +592,7 @@ cc_library(
     }),
     visibility = ["//visibility:private"],
     deps = [
-        "//mediapipe/gpu:gl_context_options_cc_proto",
+        ":gl_context_options_cc_proto",
         ":graph_support",
         "//mediapipe/framework:calculator_context",
         "//mediapipe/framework:executor",
@@ -808,15 +808,13 @@ objc_library(
         "-Wno-shorten-64-to-32",
     ],
     features = ["-layering_check"],
-    sdk_frameworks = [
-        "CoreVideo",
-        "Metal",
-    ],
     visibility = ["//visibility:public"],
     deps = [
         ":gpu_shared_data_internal",
         ":graph_support",
         "//mediapipe/objc:mediapipe_framework_ios",
+        "//third_party/apple_frameworks:CoreVideo",
+        "//third_party/apple_frameworks:Metal",
         "@google_toolbox_for_mac//:GTM_Defines",
     ],
 )
@@ -835,10 +833,10 @@ cc_library(
     deps = [
         ":gl_base",
         ":gl_simple_shaders",
+        ":scale_mode_cc_proto",
         ":shader_util",
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework/port:status",
-        "//mediapipe/gpu:scale_mode_cc_proto",
     ],
 )
 
@@ -909,8 +907,8 @@ proto_library(
     srcs = ["gl_scaler_calculator.proto"],
     visibility = ["//visibility:public"],
     deps = [
+        ":scale_mode_proto",
         "//mediapipe/framework:calculator_proto",
-        "//mediapipe/gpu:scale_mode_proto",
     ],
 )
 
@@ -932,6 +930,7 @@ cc_library(
     deps = [
         ":gl_calculator_helper",
         ":gl_quad_renderer",
+        ":gl_scaler_calculator_cc_proto",
         ":gl_simple_shaders",
         ":shader_util",
         "//mediapipe/framework:calculator_framework",
@@ -939,7 +938,6 @@ cc_library(
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework/port:status",
         "//mediapipe/framework/tool:options_util",
-        "//mediapipe/gpu:gl_scaler_calculator_cc_proto",
     ],
     alwayslink = 1,
 )
@@ -952,13 +950,13 @@ cc_library(
         ":egl_surface_holder",
         ":gl_calculator_helper",
         ":gl_quad_renderer",
+        ":gl_surface_sink_calculator_cc_proto",
         ":gpu_buffer",
         ":shader_util",
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/api2:node",
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework/port:status",
-        "//mediapipe/gpu:gl_surface_sink_calculator_cc_proto",
         "@com_google_absl//absl/synchronization",
     ],
     alwayslink = 1,
@@ -968,8 +966,8 @@ proto_library(
     name = "gl_surface_sink_calculator_proto",
     srcs = ["gl_surface_sink_calculator.proto"],
     deps = [
+        ":scale_mode_proto",
         "//mediapipe/framework:calculator_proto",
-        "//mediapipe/gpu:scale_mode_proto",
     ],
 )
 
@@ -1020,16 +1018,14 @@ objc_library(
     name = "metal_copy_calculator",
     srcs = ["MetalCopyCalculator.mm"],
     features = ["-layering_check"],
-    sdk_frameworks = [
-        "CoreVideo",
-        "Metal",
-    ],
     visibility = ["//visibility:public"],
     deps = [
         ":MPPMetalHelper",
+        ":copy_calculator_cc_proto",
         ":simple_shaders_mtl",
-        "//mediapipe/gpu:copy_calculator_cc_proto",
         "//mediapipe/objc:mediapipe_framework_ios",
+        "//third_party/apple_frameworks:CoreVideo",
+        "//third_party/apple_frameworks:Metal",
     ],
     alwayslink = 1,
 )
@@ -1038,15 +1034,13 @@ objc_library(
     name = "metal_rgb_weight_calculator",
     srcs = ["MetalRgbWeightCalculator.mm"],
     features = ["-layering_check"],
-    sdk_frameworks = [
-        "CoreVideo",
-        "Metal",
-    ],
     visibility = ["//visibility:public"],
     deps = [
         ":MPPMetalHelper",
         ":simple_shaders_mtl",
         "//mediapipe/objc:mediapipe_framework_ios",
+        "//third_party/apple_frameworks:CoreVideo",
+        "//third_party/apple_frameworks:Metal",
     ],
     alwayslink = 1,
 )
@@ -1055,15 +1049,13 @@ objc_library(
     name = "metal_sobel_calculator",
     srcs = ["MetalSobelCalculator.mm"],
     features = ["-layering_check"],
-    sdk_frameworks = [
-        "CoreVideo",
-        "Metal",
-    ],
     visibility = ["//visibility:public"],
     deps = [
         ":MPPMetalHelper",
         ":simple_shaders_mtl",
         "//mediapipe/objc:mediapipe_framework_ios",
+        "//third_party/apple_frameworks:CoreVideo",
+        "//third_party/apple_frameworks:Metal",
     ],
     alwayslink = 1,
 )
@@ -1072,15 +1064,13 @@ objc_library(
     name = "metal_sobel_compute_calculator",
     srcs = ["MetalSobelComputeCalculator.mm"],
     features = ["-layering_check"],
-    sdk_frameworks = [
-        "CoreVideo",
-        "Metal",
-    ],
     visibility = ["//visibility:public"],
     deps = [
         ":MPPMetalHelper",
         ":simple_shaders_mtl",
         "//mediapipe/objc:mediapipe_framework_ios",
+        "//third_party/apple_frameworks:CoreVideo",
+        "//third_party/apple_frameworks:Metal",
     ],
     alwayslink = 1,
 )
@@ -1090,15 +1080,13 @@ objc_library(
     srcs = ["MPSSobelCalculator.mm"],
     copts = ["-std=c++17"],
     features = ["-layering_check"],
-    sdk_frameworks = [
-        "CoreVideo",
-        "Metal",
-        "MetalPerformanceShaders",
-    ],
     visibility = ["//visibility:public"],
     deps = [
         ":MPPMetalHelper",
         "//mediapipe/objc:mediapipe_framework_ios",
+        "//third_party/apple_frameworks:CoreVideo",
+        "//third_party/apple_frameworks:Metal",
+        "//third_party/apple_frameworks:MetalPerformanceShaders",
     ],
     alwayslink = 1,
 )
@@ -1106,15 +1094,13 @@ objc_library(
 objc_library(
     name = "mps_threshold_calculator",
     srcs = ["MPSThresholdCalculator.mm"],
-    sdk_frameworks = [
-        "CoreVideo",
-        "Metal",
-        "MetalPerformanceShaders",
-    ],
     visibility = ["//visibility:public"],
     deps = [
         ":MPPMetalHelper",
         "//mediapipe/objc:mediapipe_framework_ios",
+        "//third_party/apple_frameworks:CoreVideo",
+        "//third_party/apple_frameworks:Metal",
+        "//third_party/apple_frameworks:MetalPerformanceShaders",
     ],
     alwayslink = 1,
 )
