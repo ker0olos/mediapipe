@@ -79,14 +79,6 @@ mediapipe_proto_library(
 cc_library(
     name = "score_calibration_calculator",
     srcs = ["score_calibration_calculator.cc"],
-    copts = select({
-        # TODO: fix tensor.h not to require this, if possible
-        "//mediapipe:apple": [
-            "-x objective-c++",
-            "-fobjc-arc",  # enable reference-counting
-        ],
-        "//conditions:default": [],
-    }),
     deps = [
         ":score_calibration_calculator_cc_proto",
         "//mediapipe/framework:calculator_framework",
@@ -186,6 +178,7 @@ cc_library(
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/tasks/cc/components/containers/proto:embeddings_cc_proto",
         "//mediapipe/tasks/cc/components/processors/proto:embedder_options_cc_proto",
+        "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:str_format",
     ],

@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package(default_visibility = ["//mediapipe/tasks:internal"])
+package(default_visibility = [
+    "//mediapipe/tasks:internal",
+    "//mediapipe/tasks:users",
+])
 
 licenses(["notice"])
 
@@ -27,4 +30,17 @@ objc_library(
     srcs = ["sources/MPPClassificationResult.m"],
     hdrs = ["sources/MPPClassificationResult.h"],
     deps = [":MPPCategory"],
+)
+
+objc_library(
+    name = "MPPEmbedding",
+    srcs = ["sources/MPPEmbedding.m"],
+    hdrs = ["sources/MPPEmbedding.h"],
+)
+
+objc_library(
+    name = "MPPEmbeddingResult",
+    srcs = ["sources/MPPEmbeddingResult.m"],
+    hdrs = ["sources/MPPEmbeddingResult.h"],
+    deps = [":MPPEmbedding"],
 )
